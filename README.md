@@ -7,8 +7,8 @@ The installation guide can be found on the [wiki](https://github.com/sickkids-mr
 
 ## Tutorials
 
-[Device Agnostic Code](https://github.com/sickkids-mri/mrrecon/wiki/Device-Agnostic-Code)
-[Loading Raw Data](https://github.com/sickkids-mri/mrrecon/wiki/Loading-Raw-Data)
+- [Device Agnostic Code](https://github.com/sickkids-mri/mrrecon/wiki/Device-Agnostic-Code)
+- [Loading Raw Data](https://github.com/sickkids-mri/mrrecon/wiki/Loading-Raw-Data)
 
 ## Contributing
 
