@@ -49,6 +49,9 @@ class DataLoader:
         """Reads file and returns a list of scans."""
         scan_list = twixtools.read_twix(self.filename,
                                         keep_syncdata_and_acqend=False)
+
+        print('')  # Fixes absence of newline, until upstream fixes
+
         self.scan_list = scan_list
         return scan_list
 
