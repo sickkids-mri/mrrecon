@@ -213,47 +213,80 @@ def print_dict_summary(data):
 class Flow4DLoader(DataLoader):
     """Data loader for 3D centre-out radial 4D flow."""
     def _read_scan_data(self, scan_list):
-        assert len(scan_list) == 2
+        if not len(scan_list) in [2, 3]:
+            raise RuntimeError('Expected the length of scan_list to be either '
+                               '2 or 3.')
+
+        # Check datatypes
         assert isinstance(scan_list[0], np.void)  # raidfile_hdr
-        assert isinstance(scan_list[1], dict)  # k-space
+        assert isinstance(scan_list[1], dict)  # noise or k-space
+        if len(scan_list) == 3:
+            assert isinstance(scan_list[2], dict)  # k-space
 
         image_scans = []  # For collecting image scans for header reading
-        scan = scan_list[1]
-        image_scans.append(scan)
 
-        self._fill_array(scan)
-        return image_scans
+        for scan in scan_list:
+            if not isinstance(scan, dict):
+                # Then it is the raidfile_hdr (not needed)
+                continue
 
-    def _fill_array(self, scan):
-        # Data should alternate between flow nav and k-space
-        # Number of lines of k-space and flow navigators
-        nlines = int(len(scan['mdb']) / 2)
+            # Check first two lines to see if this is a k-space or noise scan.
+            # If it's a noise scan, is_image_scan() should return False for
+            # both lines. If it's k-space, the first line should return False
+            # since it's the data collected during the flow encoding gradient,
+            # and the second should return True.
+            first_line = scan['mdb'][0]
+            second_line = scan['mdb'][1]
+            if first_line.is_image_scan():
+                raise RuntimeError('Unexpected data format. Possible that flow'
+                                   ' navigators were not collected.')
 
-        # Check first line for size of flow navigators array
-        ncoils, nro = scan['mdb'][0].data.shape
+            if second_line.is_image_scan():
+                image_scans.append(scan)
 
-        self.data['flownav'] = np.empty((ncoils, nlines, nro),
-                                        dtype=np.complex64)
+                # Data should alternate between flow nav and k-space
+                # Number of lines of k-space and flow navigators
+                nlines = int(len(scan['mdb']) / 2)
 
-        # Check second line for size of k-space array
-        ncoils, nro = scan['mdb'][1].data.shape
+                # Check first line for size of flow navigators array
+                ncoils, nro = first_line.data.shape
 
-        self.data['kspace'] = np.empty((ncoils, nlines, nro),
-                                       dtype=np.complex64)
+                self.data['flownav'] = np.empty((ncoils, nlines, nro),
+                                                dtype=np.complex64)
 
-        f = 0
-        k = 0
-        for line in scan['mdb']:
-            if line.is_flag_set('RTFEEDBACK'):
-                assert f == k
-                self.data['flownav'][:, f, :] = line.data
-                f += 1
-            elif line.is_image_scan():
-                assert f == (k + 1)
-                self.data['kspace'][:, k, :] = line.data
-                k += 1
+                # Check second line for size of k-space array
+                ncoils, nro = second_line.data.shape
+
+                self.data['kspace'] = np.empty((ncoils, nlines, nro),
+                                               dtype=np.complex64)
+
+                # Loads and stores each line, and checks that flow nav and
+                # k-space alternate
+                f = 0
+                k = 0
+                for line in scan['mdb']:
+                    if line.is_flag_set('RTFEEDBACK'):
+                        assert f == k
+                        self.data['flownav'][:, f, :] = line.data
+                        f += 1
+                    elif line.is_image_scan():
+                        assert f == (k + 1)
+                        self.data['kspace'][:, k, :] = line.data
+                        k += 1
+                    else:
+                        raise RuntimeError('Data line has unidentified flag.')
             else:
-                raise RuntimeError('Data line has unidentified flag.')
+                # It is noise scan
+                nlines = len(scan['mdb'])
+                ncoils, nro = first_line.data.shape
+
+                self.data['noise'] = np.empty((ncoils, nlines, nro),
+                                              dtype=np.complex64)
+
+                for idx, line in enumerate(scan['mdb']):
+                    self.data['noise'][:, idx, :] = line.data
+
+        return image_scans
 
     def _reformat(self):
         """Reformatting steps that may be sequence-specific."""
