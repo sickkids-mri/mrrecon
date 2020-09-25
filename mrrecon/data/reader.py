@@ -125,6 +125,7 @@ class DataLoader:
                     self.data['nz'] = int(hdr['MeasYaps']['sKSpace']['lImagesPerSlab'])  # noqa
                 break
 
+        # In millimetres
         self.data['fovx'] = float(hdr['MeasYaps']['sSliceArray']['asSlice'][0]['dReadoutFOV'])  # noqa
         self.data['fovy'] = float(hdr['MeasYaps']['sSliceArray']['asSlice'][0]['dPhaseFOV'])  # noqa
         self.data['fovz'] = float(hdr['MeasYaps']['sSliceArray']['asSlice'][0]['dThickness'])  # noqa
@@ -133,11 +134,14 @@ class DataLoader:
         self.data['dy'] = self.data['fovy'] / self.data['ny']
         self.data['dz'] = self.data['fovz'] / self.data['nz']
 
+        # Converts to milliseconds
         self.data['tr'] = float(hdr['MeasYaps']['alTR'][0]) / 1000  # noqa
         self.data['te'] = float(hdr['MeasYaps']['alTE'][0]) / 1000  # noqa
         self.data['ti'] = float(hdr['MeasYaps']['alTI'][0]) / 1000  # noqa
+        # In degrees
         self.data['flipangle'] = float(hdr['MeasYaps']['adFlipAngleDegree'][0])  # noqa
 
+        # VENC in (cm/s)
         self.data['venc'] = float(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nVelocity'])  # noqa
         self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
 
@@ -145,6 +149,7 @@ class DataLoader:
         for line in hdr['Dicom'].split('\n'):
             if 'flUsedPatientWeight' in line:
                 parts = line.split()
+                # In kg
                 self.data['weight'] = float(parts[4])
                 break
 
