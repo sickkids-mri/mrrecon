@@ -145,6 +145,9 @@ class DataLoader:
         self.data['venc'] = float(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nVelocity'])  # noqa
         self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
 
+        # Convert from nanoseconds to microseconds
+        self.data['dwelltime'] = float(hdr['MeasYaps']['sRXSPEC']['alDwellTime'][0]) / 1000  # noqa
+
         # Patient weight
         for line in hdr['Dicom'].split('\n'):
             if 'flUsedPatientWeight' in line:
