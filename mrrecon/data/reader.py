@@ -156,6 +156,25 @@ class DataLoader:
                 self.data['weight'] = float(parts[4])
                 break
 
+        # Acquisition system information
+        for line in hdr['Dicom'].split('\n'):
+            if '"Manufacturer"' in line:
+                parts = line.split()
+                self.data['vendor'] = parts[2].strip('"')
+                break
+
+        for line in hdr['Dicom'].split('\n'):
+            if 'ManufacturersModelName' in line:
+                parts = line.split()
+                self.data['systemmodel'] = parts[2].strip('"')
+                break
+
+        for line in hdr['Dicom'].split('\n'):
+            if 'flMagneticFieldStrength' in line:
+                parts = line.split()
+                self.data['magfield'] = float(parts[4])
+                break
+
         return
 
     def _read_minidataheader(self, image_scans):
