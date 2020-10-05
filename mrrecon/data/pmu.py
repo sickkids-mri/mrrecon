@@ -5,11 +5,15 @@ def choose_pmu_for_cardiac_gating(user_float):
     """Tries to automatically choose the best signal for cardiac gating.
 
     Args:
-        user_float: 2D array. Shape (16, num_acq).
+        user_float: 2D array. Shape (24, num_acq).
 
     Returns:
         chosen_ind: The index of the chosen PMU measurement in user_float.
     """
+    if not user_float.shape[0] == 24:
+        raise AssertionError('Expected array with 24 rows, '
+                             f'got {user_float.shape[0]} instead.')
+
     # The PMU data was set to be stored in the last 6 rows (ref Eric Schrauben)
     num_meas = 6
     # Calculate the standard deviations to get a measure of spread
@@ -18,7 +22,7 @@ def choose_pmu_for_cardiac_gating(user_float):
 
     for a in range(num_meas):
         # Current measurement
-        meas_number = 16 - num_meas + a
+        meas_number = 24 - num_meas + a
         meas = np.copy(user_float[meas_number])
 
         # Some measurements are flat
@@ -55,5 +59,5 @@ def choose_pmu_for_cardiac_gating(user_float):
 
     # Find the measurement with the smallest standard deviation
     smallest_std_ind = np.argmin(standard_devs)
-    chosen_ind = 16 - num_meas + smallest_std_ind
+    chosen_ind = 24 - num_meas + smallest_std_ind
     return chosen_ind
