@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import find_peaks
 
 
 def choose_pmu_for_cardiac_gating(user_float):
@@ -95,3 +96,42 @@ def flip_upwards(meas):
         flipped_meas = meas_orig
 
     return flipped_meas
+
+
+def find_peaks(signal, fs, min_separation=270, window_width=2500, noise_level=1.25):
+    """Find peaks from pulse oximeter or ECG.
+
+    Args:
+        signal: Pulse oximeter or ECG data.
+        fs: Sampling frequency (Hz) of the signal.
+        min_separation: Strict minimum time between peaks (ms).
+        window_width: Width of sliding window for standard deviation (ms).
+        noise_level: Scalar. Increase this if the height of erroneous peaks is
+            high.
+
+    Returns:
+        peaks: 1D array. Indices of the signal array where peaks are found.
+        height: The adaptive minimum height for determining peaks.
+    """
+    # Sliding window mean and standard deviation
+    ww = int(np.round(window_width/1000*fs))
+    means = np.zeros_like(signal)
+    stds = np.zeros_like(signal)
+    for a in range(len(stds)):
+        # Current segment
+        ww_ceil = int(np.ceil(ww/2))  # Upper ind
+        ww_floor = int(np.floor(ww/2))  # Lower ind
+        if a < ww_floor:
+            curr_seg = signal[:(a+ww_ceil)]
+        else:
+            curr_seg = signal[(a-ww_floor):(a+ww_ceil)]
+
+        means[a] = np.mean(curr_seg)
+        stds[a] = np.std(curr_seg)
+
+    height = means + noise_level*stds
+    distance = min_separation/1000*fs
+    peaks, _ = scipy.signal.find_peaks(signal, height=height,
+                                       distance=distance)
+
+    return peaks, height
