@@ -61,3 +61,37 @@ def choose_pmu_for_cardiac_gating(user_float):
     smallest_std_ind = np.argmin(standard_devs)
     chosen_ind = 24 - num_meas + smallest_std_ind
     return chosen_ind
+
+
+def flip_upwards(meas):
+    """Flip the signal so that the peaks are pointing upwards.
+
+    Args:
+        meas: 1D array. Cardiac measurement.
+
+    Returns:
+        flipped_meas: 1D array. Flipped so that peaks are pointing upwards.
+    """
+    meas_orig = meas
+    meas = np.copy(meas)
+
+    # Try to deal with outliers from the measurement before finding min/max
+    # TODO: I have never looked at the distributions to validate this
+    meas_mean = np.mean(meas)
+    meas_std = np.std(meas)
+    # Remove outliers
+    meas[meas > (meas_mean + 2*meas_std)] = meas_mean
+    meas[meas < (meas_mean - 2*meas_std)] = meas_mean
+
+    meas_min = meas.min()
+    meas_max = meas.max()
+    meas_midpoint = (meas_min + meas_max) / 2
+    meas_mean = np.mean(meas)  # Mean of the processed measurement
+
+    if meas_mean > meas_midpoint:
+        # Flip the original measurement (that has potential outliers)
+        flipped_meas = - meas_orig + meas_max + meas_min
+    else:
+        flipped_meas = meas_orig
+
+    return flipped_meas
