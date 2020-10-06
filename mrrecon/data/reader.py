@@ -103,20 +103,26 @@ class DataLoader:
         # Only 'MeasYaps' was parsed and values stored dictionary
         # TODO: What happens when field/value does not exist?
 
+        config = self._make_dict_from_hdr(hdr['Config'])
+        dicom = self._make_dict_from_hdr(hdr['Dicom'])
+
         # Manual parsing  (TODO Do these parsing rules work all the time?)
-        for line in hdr['Config'].split('\n'):
-            if 'ImageColumns' in line:
-                parts = line.split()
-                self.data['nx'] = int(parts[2])
-                break
 
-        for line in hdr['Config'].split('\n'):
-            if 'ImageLines' in line:
-                parts = line.split()
-                self.data['ny'] = int(parts[2])
-                break
+        #for line in hdr['Config'].split('\n'):
+        #    if 'ImageColumns' in line:
+        #        parts = line.split()
+        #        self.data['nx'] = int(parts[2])
+        #        break
+        self.data['nx'] = config['ImageColumns']
 
-        meas = hdr['Meas'].split('\n')
+        #for line in hdr['Config'].split('\n'):
+        #    if 'ImageLines' in line:
+        #        parts = line.split()
+        #        self.data['ny'] = int(parts[2])
+        #        break
+        self.data['ny'] = config['ImageLines']
+
+        meas = hdr['Meas'].split('\n') #
         for n, line in enumerate(meas):
             if 'i3DFTLength' in line:
                 if int(meas[n + 2]) == 1:
@@ -148,15 +154,76 @@ class DataLoader:
         # Convert from nanoseconds to microseconds
         self.data['dwelltime'] = float(hdr['MeasYaps']['sRXSPEC']['alDwellTime'][0]) / 1000  # noqa
 
+        # Field strength
+        self.data['field_strength'] = dicom['flMagneticFieldStrength']
+
+        # Grad performance params (slew rate and max grad)
+        # Using dictionaries to look up values
+        grad_code = hdr['MeasYaps']['sGRADSPEC']['ucMode']
+
+        if self.data['field_strength'] < 2: #Dictionary values depend on system field strength
+
+            self.data['slew_rate'] = {  #Slew rate in G/cm/s
+                1: 13605.4, #FAST
+                2: 8000,    #NORMAL
+                0: 8000,    #Also NORMAL
+                4: 4000     #WHISPER
+            }[grad_code]
+
+            self.data['Gmax'] = {   #max grad strength in G/cm
+                1: 2.8,  #FAST
+                2: 2.2,  #NORMAL
+                0: 2.2,  #Also NORMAL
+                4: 2.2   #WHISPER
+            }[grad_code]
+
+        else:
+
+            self.data['slew_rate'] = {  #Slew rate in G/cm/s
+                8: 15094.3,  #PERFORMANCE
+                1: 14414.4,  #FAST
+                2: 8000,     #NORMAL
+                0: 8000,     #Also NORMAL
+                4: 4000      #WHISPER
+            }[grad_code]
+
+            self.data['Gmax'] = {  #max grad strength in G/cm
+                8: 3.7,  #PERFORMANCE
+                1: 2.4,  #FAST
+                2: 2.2,  #NORMAL
+                0: 2.2,  #Also NORMAL
+                4: 2.2   #WHISPER
+            }[grad_code]
+
         # Patient weight
-        for line in hdr['Dicom'].split('\n'):
-            if 'flUsedPatientWeight' in line:
-                parts = line.split()
+        #for line in hdr['Dicom'].split('\n'):
+        #    if 'flUsedPatientWeight' in line:
+        #        parts = line.split()
                 # In kg
-                self.data['weight'] = float(parts[4])
-                break
+        #        self.data['weight'] = float(parts[4])
+        #        break
+        self.data['weight'] = dicom['flUsedPatientWeight']
 
         return
+
+    def _make_dict_from_hdr(self, dict_string):
+        """Generates a dictionary from a portion of the header (other than MeasYaps & Meas)"""
+
+        import re
+        pattern = re.compile(
+            '<Param(Long|String|Double)\\."([^"]+)">  { ([^}]+)  }')
+        out = {}
+        for dtype, name, data in pattern.findall(dict_string):
+            if dtype == "String":
+                out[name] = data[1:-1]
+            if dtype == "Long":
+                if " " in data:
+                    out[name] = [int(x) for x in data.split()]
+                else:
+                    out[name] = int(data)
+            if dtype == "Double":
+                out[name] = float(data.rstrip().split(" ")[-1])
+        return out
 
     def _read_minidataheader(self, image_scans):
         """Reads mini data headers (MDH)."""
