@@ -106,23 +106,10 @@ class DataLoader:
         config = self._make_dict_from_hdr(hdr['Config'])
         dicom = self._make_dict_from_hdr(hdr['Dicom'])
 
-        # Manual parsing  (TODO Do these parsing rules work all the time?)
-
-        #for line in hdr['Config'].split('\n'):
-        #    if 'ImageColumns' in line:
-        #        parts = line.split()
-        #        self.data['nx'] = int(parts[2])
-        #        break
         self.data['nx'] = config['ImageColumns']
-
-        #for line in hdr['Config'].split('\n'):
-        #    if 'ImageLines' in line:
-        #        parts = line.split()
-        #        self.data['ny'] = int(parts[2])
-        #        break
         self.data['ny'] = config['ImageLines']
 
-        meas = hdr['Meas'].split('\n') #
+        meas = hdr['Meas'].split('\n') #Not yet making dict out of 'Meas'
         for n, line in enumerate(meas):
             if 'i3DFTLength' in line:
                 if int(meas[n + 2]) == 1:
@@ -144,6 +131,7 @@ class DataLoader:
         self.data['tr'] = float(hdr['MeasYaps']['alTR'][0]) / 1000  # noqa
         self.data['te'] = float(hdr['MeasYaps']['alTE'][0]) / 1000  # noqa
         self.data['ti'] = float(hdr['MeasYaps']['alTI'][0]) / 1000  # noqa
+
         # In degrees
         self.data['flipangle'] = float(hdr['MeasYaps']['adFlipAngleDegree'][0])  # noqa
 
@@ -195,33 +183,7 @@ class DataLoader:
                 4: 2.2   #WHISPER
             }[grad_code]
 
-        # Patient weight
-        #for line in hdr['Dicom'].split('\n'):
-        #    if 'flUsedPatientWeight' in line:
-        #        parts = line.split()
-                # In kg
-        #        self.data['weight'] = float(parts[4])
-        #        break
         self.data['weight'] = dicom['flUsedPatientWeight']
-
-        # Acquisition system information
-        for line in hdr['Dicom'].split('\n'):
-            if '"Manufacturer"' in line:
-                parts = line.split()
-                self.data['vendor'] = parts[2].strip('"')
-                break
-
-        for line in hdr['Dicom'].split('\n'):
-            if 'ManufacturersModelName' in line:
-                parts = line.split()
-                self.data['systemmodel'] = parts[2].strip('"')
-                break
-
-        for line in hdr['Dicom'].split('\n'):
-            if 'flMagneticFieldStrength' in line:
-                parts = line.split()
-                self.data['magfield'] = float(parts[4])
-                break
 
         return
 
