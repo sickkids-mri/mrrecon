@@ -159,7 +159,7 @@ class DataLoader:
                 4: 4000      # WHISPER
             }[grad_code]
 
-            self.data['Gmax'] = {   # max grad strength in G/cm
+            self.data['grad_max'] = {   # Max grad strength in G/cm
                 1: 2.8,  # FAST
                 2: 2.2,  # NORMAL
                 0: 2.2,  # Also NORMAL
@@ -176,7 +176,7 @@ class DataLoader:
                 4: 4000      # WHISPER
             }[grad_code]
 
-            self.data['Gmax'] = {  # max grad strength in G/cm
+            self.data['grad_max'] = {  # Max grad strength in G/cm
                 8: 3.7,  # PERFORMANCE
                 1: 2.4,  # FAST
                 2: 2.2,  # NORMAL
