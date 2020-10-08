@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import scipy
 
@@ -158,4 +160,22 @@ def extrapolate_triggers(triggers, num_extrap=5):
                                  triggers[-1] + num_extrap * rr_mean_end,
                                  num_extrap)
     triggers = np.concatenate((triggers_before, triggers, triggers_after))
+    return triggers
+
+
+def hr_to_triggers(hr, first, last):
+    """Calculates trigger times based on a constant heart rate.
+
+    Args:
+        hr (float): A constant heart rate (bpm).
+        first (float): Time stamp of first k-space line (in ms).
+        last (float): Time stamp of last k-space line (in ms).
+
+    Returns:
+        triggers (array): 1D array containing simulated cardiac trigger times.
+    """
+    # Convert heart rate (bpm) to RR interval (ms)
+    rr = 1 / hr * 60 * 1000
+    num_beats = math.ceil((last - first) / rr) + 1
+    triggers = np.arange(num_beats) * rr + first
     return triggers
