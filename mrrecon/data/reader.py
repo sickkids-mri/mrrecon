@@ -109,7 +109,7 @@ class DataLoader:
         self.data['nx'] = config['ImageColumns']
         self.data['ny'] = config['ImageLines']
 
-        meas = hdr['Meas'].split('\n') #Not yet making dict out of 'Meas'
+        meas = hdr['Meas'].split('\n')  # Not yet making dict out of 'Meas'
         for n, line in enumerate(meas):
             if 'i3DFTLength' in line:
                 if int(meas[n + 2]) == 1:
@@ -149,38 +149,39 @@ class DataLoader:
         # Using dictionaries to look up values
         grad_code = hdr['MeasYaps']['sGRADSPEC']['ucMode']
 
-        if self.data['field_strength'] < 2: #Dictionary values depend on system field strength
+        # Dictionary values depend on system field strength
+        if self.data['field_strength'] < 2:
 
-            self.data['slew_rate'] = {  #Slew rate in G/cm/s
-                1: 13605.4, #FAST
-                2: 8000,    #NORMAL
-                0: 8000,    #Also NORMAL
-                4: 4000     #WHISPER
+            self.data['slew_rate'] = {  # Slew rate in G/cm/s
+                1: 13605.4,  # FAST
+                2: 8000,     # NORMAL
+                0: 8000,     # Also NORMAL
+                4: 4000      # WHISPER
             }[grad_code]
 
-            self.data['Gmax'] = {   #max grad strength in G/cm
-                1: 2.8,  #FAST
-                2: 2.2,  #NORMAL
-                0: 2.2,  #Also NORMAL
-                4: 2.2   #WHISPER
+            self.data['grad_max'] = {   # Max grad strength in G/cm
+                1: 2.8,  # FAST
+                2: 2.2,  # NORMAL
+                0: 2.2,  # Also NORMAL
+                4: 2.2   # WHISPER
             }[grad_code]
 
         else:
 
-            self.data['slew_rate'] = {  #Slew rate in G/cm/s
-                8: 15094.3,  #PERFORMANCE
-                1: 14414.4,  #FAST
-                2: 8000,     #NORMAL
-                0: 8000,     #Also NORMAL
-                4: 4000      #WHISPER
+            self.data['slew_rate'] = {  # Slew rate in G/cm/s
+                8: 15094.3,  # PERFORMANCE
+                1: 14414.4,  # FAST
+                2: 8000,     # NORMAL
+                0: 8000,     # Also NORMAL
+                4: 4000      # WHISPER
             }[grad_code]
 
-            self.data['Gmax'] = {  #max grad strength in G/cm
-                8: 3.7,  #PERFORMANCE
-                1: 2.4,  #FAST
-                2: 2.2,  #NORMAL
-                0: 2.2,  #Also NORMAL
-                4: 2.2   #WHISPER
+            self.data['grad_max'] = {  # Max grad strength in G/cm
+                8: 3.7,  # PERFORMANCE
+                1: 2.4,  # FAST
+                2: 2.2,  # NORMAL
+                0: 2.2,  # Also NORMAL
+                4: 2.2   # WHISPER
             }[grad_code]
 
         self.data['weight'] = dicom['flUsedPatientWeight']
