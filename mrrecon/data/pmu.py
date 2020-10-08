@@ -1,5 +1,7 @@
+import math
+
 import numpy as np
-from scipy.signal import find_peaks
+import scipy
 
 
 def choose_pmu_for_cardiac_gating(user_float):
@@ -135,3 +137,45 @@ def find_peaks(signal, fs, min_separation=270, window_width=2500, noise_level=1.
                                        distance=distance)
 
     return peaks, height
+
+
+def extrapolate_triggers(triggers, num_extrap=5):
+    """Extrapolates some trigger times before and after.
+
+    Args:
+        triggers (array): 1D array containing cardiac trigger times.
+        num_extrap (int): Number of trigger times to extrapolate.
+
+    Returns:
+        triggers (array): 1D array containing original cardiac trigger times,
+            padded both sides with extrapolated trigger times.
+    """
+    rr = np.diff(triggers)
+    rr_mean_beginning = np.mean(rr[:5])
+    rr_mean_end = np.mean(rr[-5:])
+    triggers_before = np.linspace(triggers[0] - num_extrap * rr_mean_beginning,
+                                  triggers[0] - rr_mean_beginning,
+                                  num_extrap)
+    triggers_after = np.linspace(triggers[-1] + rr_mean_end,
+                                 triggers[-1] + num_extrap * rr_mean_end,
+                                 num_extrap)
+    triggers = np.concatenate((triggers_before, triggers, triggers_after))
+    return triggers
+
+
+def hr_to_triggers(hr, first, last):
+    """Calculates trigger times based on a constant heart rate.
+
+    Args:
+        hr (float): A constant heart rate (bpm).
+        first (float): Time stamp of first k-space line (in ms).
+        last (float): Time stamp of last k-space line (in ms).
+
+    Returns:
+        triggers (array): 1D array containing simulated cardiac trigger times.
+    """
+    # Convert heart rate (bpm) to RR interval (ms)
+    rr = 1 / hr * 60 * 1000
+    num_beats = math.ceil((last - first) / rr) + 1
+    triggers = np.arange(num_beats) * rr + first
+    return triggers
