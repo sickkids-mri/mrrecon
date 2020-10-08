@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import find_peaks
+import scipy
 
 
 def choose_pmu_for_cardiac_gating(user_float):
