@@ -147,7 +147,7 @@ class DataLoader:
 
         # Grad performance params (slew rate and max grad)
         # Using dictionaries to look up values
-        grad_code = hdr['MeasYaps']['sGRADSPEC']['ucMode']
+        grad_mode = hdr['MeasYaps']['sGRADSPEC']['ucMode']
 
         # Dictionary values depend on system field strength
         if self.data['field_strength'] < 2:
@@ -157,14 +157,14 @@ class DataLoader:
                 2: 8000,     # NORMAL
                 0: 8000,     # Also NORMAL
                 4: 4000      # WHISPER
-            }[grad_code]
+            }[grad_mode]
 
             self.data['grad_max'] = {   # Max grad strength in G/cm
                 1: 2.8,  # FAST
                 2: 2.2,  # NORMAL
                 0: 2.2,  # Also NORMAL
                 4: 2.2   # WHISPER
-            }[grad_code]
+            }[grad_mode]
 
         else:
 
@@ -174,17 +174,19 @@ class DataLoader:
                 2: 8000,     # NORMAL
                 0: 8000,     # Also NORMAL
                 4: 4000      # WHISPER
-            }[grad_code]
+            }[grad_mode]
 
-            self.data['grad_max'] = {  # Max grad strength in G/cm
-                8: 3.7,  # PERFORMANCE
-                1: 2.4,  # FAST
-                2: 2.2,  # NORMAL
-                0: 2.2,  # Also NORMAL
-                4: 2.2   # WHISPER
-            }[grad_code]
+            self.data['grad_max'] = {  # Max grad strength in mT/m
+                8: 37,  # PERFORMANCE
+                1: 24,  # FAST
+                2: 22,  # NORMAL
+                0: 22,  # Also NORMAL
+                4: 22   # WHISPER
+            }[grad_mode]
 
         self.data['weight'] = dicom['flUsedPatientWeight']
+
+        self.data['readout_os_factor'] = config['ReadoutOversamplingFactor']
 
         return
 
