@@ -152,28 +152,28 @@ class DataLoader:
         # Dictionary values depend on system field strength
         if self.data['field_strength'] < 2:
 
-            self.data['slew_rate'] = {  # Slew rate in G/cm/s
-                1: 13605.4,  # FAST
-                2: 8000,     # NORMAL
-                0: 8000,     # Also NORMAL
-                4: 4000      # WHISPER
+            self.data['slew_rate'] = {  # Slew rate in usec/mT/m
+                1: 5.88,  # FAST
+                2: 10.0,  # NORMAL
+                0: 10.0,  # Also NORMAL
+                4: 20.0   # WHISPER
             }[grad_mode]
 
-            self.data['grad_max'] = {   # Max grad strength in G/cm
-                1: 2.8,  # FAST
-                2: 2.2,  # NORMAL
-                0: 2.2,  # Also NORMAL
-                4: 2.2   # WHISPER
+            self.data['grad_max'] = {   # Max grad strength in mT/m
+                1: 28,  # FAST
+                2: 22,  # NORMAL
+                0: 22,  # Also NORMAL
+                4: 22   # WHISPER
             }[grad_mode]
 
         else:
 
-            self.data['slew_rate'] = {  # Slew rate in G/cm/s
-                8: 15094.3,  # PERFORMANCE
-                1: 14414.4,  # FAST
-                2: 8000,     # NORMAL
-                0: 8000,     # Also NORMAL
-                4: 4000      # WHISPER
+            self.data['slew_rate'] = {  # Slew rate in usec/mT/m
+                8: 5.3,    # PERFORMANCE
+                1: 5.55,   # FAST
+                2: 10.0,   # NORMAL
+                0: 10.0,   # Also NORMAL
+                4: 20.0    # WHISPER
             }[grad_mode]
 
             self.data['grad_max'] = {  # Max grad strength in mT/m
