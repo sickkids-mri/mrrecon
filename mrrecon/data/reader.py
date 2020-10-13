@@ -108,6 +108,7 @@ class DataLoader:
 
         self.data['nx'] = config['ImageColumns']
         self.data['ny'] = config['ImageLines']
+        self.data['seq_filename'] = config['SequenceFileName']
 
         meas = hdr['Meas'].split('\n')  # Not yet making dict out of 'Meas'
         for n, line in enumerate(meas):
@@ -157,14 +158,14 @@ class DataLoader:
                 2: 10.0,  # NORMAL
                 0: 10.0,  # Also NORMAL
                 4: 20.0   # WHISPER
-            }[grad_mode]
+            }.get(grad_mode) #Returns None if there is no value for grad_mode
 
             self.data['grad_max'] = {   # Max grad strength in mT/m
                 1: 28,  # FAST
                 2: 22,  # NORMAL
                 0: 22,  # Also NORMAL
                 4: 22   # WHISPER
-            }[grad_mode]
+            }.get(grad_mode)
 
         else:
 
@@ -174,7 +175,7 @@ class DataLoader:
                 2: 10.0,   # NORMAL
                 0: 10.0,   # Also NORMAL
                 4: 20.0    # WHISPER
-            }[grad_mode]
+            }.get(grad_mode)
 
             self.data['grad_max'] = {  # Max grad strength in mT/m
                 8: 37,  # PERFORMANCE
@@ -182,7 +183,7 @@ class DataLoader:
                 2: 22,  # NORMAL
                 0: 22,  # Also NORMAL
                 4: 22   # WHISPER
-            }[grad_mode]
+            }.get(grad_mode)
 
         self.data['weight'] = dicom['flUsedPatientWeight']
 
