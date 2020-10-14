@@ -146,19 +146,19 @@ class DataLoader:
         # Field strength
         self.data['field_strength'] = dicom['flMagneticFieldStrength']
 
-        # Grad performance params (slew rate and max grad)
+        # Grad performance params (rise time and max grad)
         # Using dictionaries to look up values
         grad_mode = hdr['MeasYaps']['sGRADSPEC']['ucMode']
 
         # Dictionary values depend on system field strength
         if self.data['field_strength'] < 2:
 
-            self.data['slew_rate'] = {  # Slew rate in usec/mT/m
+            self.data['rise_time'] = {  # Rise time in usec/(mT/m)
                 1: 5.88,  # FAST
                 2: 10.0,  # NORMAL
                 0: 10.0,  # Also NORMAL
                 4: 20.0   # WHISPER
-            }.get(grad_mode) #Returns None if there is no value for grad_mode
+            }.get(grad_mode)  # Returns None if there is no value for grad_mode
 
             self.data['grad_max'] = {   # Max grad strength in mT/m
                 1: 28,  # FAST
@@ -169,7 +169,7 @@ class DataLoader:
 
         else:
 
-            self.data['slew_rate'] = {  # Slew rate in usec/mT/m
+            self.data['rise_time'] = {  # Rise time in usec/(mT/m)
                 8: 5.3,    # PERFORMANCE
                 1: 5.55,   # FAST
                 2: 10.0,   # NORMAL
