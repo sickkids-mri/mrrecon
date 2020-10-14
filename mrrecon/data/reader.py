@@ -184,6 +184,9 @@ class DataLoader:
         # Convert from nanoseconds to microseconds
         self.data['dwelltime'] = float(hdr['MeasYaps']['sRXSPEC']['alDwellTime'][0]) / 1000  # noqa
 
+        self.data['vendor'] = dicom['Manufacturer']
+        self.data['systemmodel'] = dicom['ManufacturersModelName']
+
         # Field strength
         self.data['field_strength'] = dicom['flMagneticFieldStrength']
 
