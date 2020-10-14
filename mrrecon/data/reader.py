@@ -103,20 +103,13 @@ class DataLoader:
         # Only 'MeasYaps' was parsed and values stored dictionary
         # TODO: What happens when field/value does not exist?
 
-        # Manual parsing  (TODO Do these parsing rules work all the time?)
-        for line in hdr['Config'].split('\n'):
-            if 'ImageColumns' in line:
-                parts = line.split()
-                self.data['nx'] = int(parts[2])
-                break
+        config = self._make_dict_from_hdr(hdr['Config'])
+        dicom = self._make_dict_from_hdr(hdr['Dicom'])
 
-        for line in hdr['Config'].split('\n'):
-            if 'ImageLines' in line:
-                parts = line.split()
-                self.data['ny'] = int(parts[2])
-                break
+        self.data['nx'] = config['ImageColumns']
+        self.data['ny'] = config['ImageLines']
 
-        meas = hdr['Meas'].split('\n')
+        meas = hdr['Meas'].split('\n')  # Not yet making dict out of 'Meas'
         for n, line in enumerate(meas):
             if 'i3DFTLength' in line:
                 if int(meas[n + 2]) == 1:
@@ -138,6 +131,7 @@ class DataLoader:
         self.data['tr'] = float(hdr['MeasYaps']['alTR'][0]) / 1000  # noqa
         self.data['te'] = float(hdr['MeasYaps']['alTE'][0]) / 1000  # noqa
         self.data['ti'] = float(hdr['MeasYaps']['alTI'][0]) / 1000  # noqa
+
         # In degrees
         self.data['flipangle'] = float(hdr['MeasYaps']['adFlipAngleDegree'][0])  # noqa
 
@@ -145,37 +139,76 @@ class DataLoader:
         self.data['venc'] = float(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nVelocity'])  # noqa
         self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
 
+        self.data['weight'] = dicom['flUsedPatientWeight']
+
         # Convert from nanoseconds to microseconds
         self.data['dwelltime'] = float(hdr['MeasYaps']['sRXSPEC']['alDwellTime'][0]) / 1000  # noqa
 
-        # Patient weight
-        for line in hdr['Dicom'].split('\n'):
-            if 'flUsedPatientWeight' in line:
-                parts = line.split()
-                # In kg
-                self.data['weight'] = float(parts[4])
-                break
+        # Field strength
+        self.data['field_strength'] = dicom['flMagneticFieldStrength']
 
-        # Acquisition system information
-        for line in hdr['Dicom'].split('\n'):
-            if '"Manufacturer"' in line:
-                parts = line.split()
-                self.data['vendor'] = parts[2].strip('"')
-                break
+        # Grad performance params (rise time and max grad)
+        # Using dictionaries to look up values
+        grad_mode = hdr['MeasYaps']['sGRADSPEC']['ucMode']
 
-        for line in hdr['Dicom'].split('\n'):
-            if 'ManufacturersModelName' in line:
-                parts = line.split()
-                self.data['systemmodel'] = parts[2].strip('"')
-                break
+        # Dictionary values depend on system field strength
+        if self.data['field_strength'] < 2:
 
-        for line in hdr['Dicom'].split('\n'):
-            if 'flMagneticFieldStrength' in line:
-                parts = line.split()
-                self.data['magfield'] = float(parts[4])
-                break
+            self.data['rise_time'] = {  # Rise time in usec/(mT/m)
+                1: 5.88,  # FAST
+                2: 10.0,  # NORMAL
+                0: 10.0,  # Also NORMAL
+                4: 20.0   # WHISPER
+            }.get(grad_mode)  # Returns None if there is no value for grad_mode
+
+            self.data['grad_max'] = {   # Max grad strength in mT/m
+                1: 28,  # FAST
+                2: 22,  # NORMAL
+                0: 22,  # Also NORMAL
+                4: 22   # WHISPER
+            }.get(grad_mode)
+
+        else:
+
+            self.data['rise_time'] = {  # Rise time in usec/(mT/m)
+                8: 5.3,    # PERFORMANCE
+                1: 5.55,   # FAST
+                2: 10.0,   # NORMAL
+                0: 10.0,   # Also NORMAL
+                4: 20.0    # WHISPER
+            }.get(grad_mode)
+
+            self.data['grad_max'] = {  # Max grad strength in mT/m
+                8: 37,  # PERFORMANCE
+                1: 24,  # FAST
+                2: 22,  # NORMAL
+                0: 22,  # Also NORMAL
+                4: 22   # WHISPER
+            }.get(grad_mode)
+
+        self.data['readout_os_factor'] = config['ReadoutOversamplingFactor']
+        self.data['seq_filename'] = config['SequenceFileName']
 
         return
+
+    def _make_dict_from_hdr(self, dict_string):
+        """Generates a dictionary from a portion of the header (other than MeasYaps & Meas)"""
+
+        import re
+        pattern = re.compile(
+            '<Param(Long|String|Double)\\."([^"]+)">  { ([^}]+)  }')
+        out = {}
+        for dtype, name, data in pattern.findall(dict_string):
+            if dtype == "String":
+                out[name] = data[1:-1]
+            if dtype == "Long":
+                if " " in data:
+                    out[name] = [int(x) for x in data.split()]
+                else:
+                    out[name] = int(data)
+            if dtype == "Double":
+                out[name] = float(data.rstrip().split(" ")[-1])
+        return out
 
     def _read_minidataheader(self, image_scans):
         """Reads mini data headers (MDH)."""
