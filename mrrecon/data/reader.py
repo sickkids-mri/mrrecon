@@ -3,6 +3,49 @@ import numpy as np
 import twixtools
 
 
+def read_twix(filename, keep_syncdata_and_acqend=True):
+    """Wraps `twixtools.read_twix` with some fixes to the reader.
+
+    This wrapper can be removed once they fix these things.
+    """
+    scan_list = twixtools.read_twix(filename, keep_syncdata_and_acqend=keep_syncdata_and_acqend)  # noqa
+
+    print('')  # Fixes absence of newline
+
+    # Parse other headers
+    for scan in scan_list:
+        if not isinstance(scan, dict):
+            # Then it is the raidfile_hdr (not needed)
+            continue
+
+        scan['hdr']['Config'] = _make_dict_from_hdr(scan['hdr']['Config'])
+        scan['hdr']['Dicom'] = _make_dict_from_hdr(scan['hdr']['Dicom'])
+
+    return scan_list
+
+
+def _make_dict_from_hdr(dict_string):
+    """Generates a dictionary from a portion of the header.
+
+    Works for Config and Dicom.
+    """
+    import re
+    pattern = re.compile(
+            '<Param(Long|String|Double)\\."([^"]+)">  { ([^}]+)  }')
+    out = {}
+    for dtype, name, data in pattern.findall(dict_string):
+        if dtype == "String":
+            out[name] = data[1:-1]
+        if dtype == "Long":
+            if " " in data:
+                out[name] = [int(x) for x in data.split()]
+            else:
+                out[name] = int(data)
+        if dtype == "Double":
+            out[name] = float(data.rstrip().split(" ")[-1])
+    return out
+
+
 class DataLoader:
     """Handles raw data loading and processing.
 
@@ -47,10 +90,7 @@ class DataLoader:
 
     def _load(self):
         """Reads file and returns a list of scans."""
-        scan_list = twixtools.read_twix(self.filename,
-                                        keep_syncdata_and_acqend=False)
-
-        print('')  # Fixes absence of newline, until upstream fixes
+        scan_list = read_twix(self.filename, keep_syncdata_and_acqend=False)
 
         self.scan_list = scan_list
         return scan_list
@@ -103,8 +143,8 @@ class DataLoader:
         # Only 'MeasYaps' was parsed and values stored dictionary
         # TODO: What happens when field/value does not exist?
 
-        config = self._make_dict_from_hdr(hdr['Config'])
-        dicom = self._make_dict_from_hdr(hdr['Dicom'])
+        config = hdr['Config']
+        dicom = hdr['Dicom']
 
         self.data['nx'] = config['ImageColumns']
         self.data['ny'] = config['ImageLines']
@@ -190,25 +230,6 @@ class DataLoader:
         self.data['seq_filename'] = config['SequenceFileName']
 
         return
-
-    def _make_dict_from_hdr(self, dict_string):
-        """Generates a dictionary from a portion of the header (other than MeasYaps & Meas)"""
-
-        import re
-        pattern = re.compile(
-            '<Param(Long|String|Double)\\."([^"]+)">  { ([^}]+)  }')
-        out = {}
-        for dtype, name, data in pattern.findall(dict_string):
-            if dtype == "String":
-                out[name] = data[1:-1]
-            if dtype == "Long":
-                if " " in data:
-                    out[name] = [int(x) for x in data.split()]
-                else:
-                    out[name] = int(data)
-            if dtype == "Double":
-                out[name] = float(data.rstrip().split(" ")[-1])
-        return out
 
     def _read_minidataheader(self, image_scans):
         """Reads mini data headers (MDH)."""
