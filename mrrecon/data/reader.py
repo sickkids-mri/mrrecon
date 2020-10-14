@@ -108,7 +108,6 @@ class DataLoader:
 
         self.data['nx'] = config['ImageColumns']
         self.data['ny'] = config['ImageLines']
-        self.data['seq_filename'] = config['SequenceFileName']
 
         meas = hdr['Meas'].split('\n')  # Not yet making dict out of 'Meas'
         for n, line in enumerate(meas):
@@ -139,6 +138,8 @@ class DataLoader:
         # VENC in (cm/s)
         self.data['venc'] = float(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nVelocity'])  # noqa
         self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
+
+        self.data['weight'] = dicom['flUsedPatientWeight']
 
         # Convert from nanoseconds to microseconds
         self.data['dwelltime'] = float(hdr['MeasYaps']['sRXSPEC']['alDwellTime'][0]) / 1000  # noqa
@@ -185,9 +186,8 @@ class DataLoader:
                 4: 22   # WHISPER
             }.get(grad_mode)
 
-        self.data['weight'] = dicom['flUsedPatientWeight']
-
         self.data['readout_os_factor'] = config['ReadoutOversamplingFactor']
+        self.data['seq_filename'] = config['SequenceFileName']
 
         return
 
