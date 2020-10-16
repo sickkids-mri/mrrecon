@@ -1,3 +1,5 @@
+import numpy as np
+
 import sigpy as sp
 
 
@@ -31,7 +33,7 @@ def concat_arrays(arrays, axis, flatten=False):
 
     for shape in shapes:
         if flatten:
-            idx += int(sp.prod(shape))
+            idx += int(np.prod(shape, dtype=np.uint64))
         else:
             idx += shape[axis]
 
