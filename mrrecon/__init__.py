@@ -3,3 +3,4 @@ from mrrecon import data
 from mrrecon import coils
 from mrrecon import recon
 from mrrecon import gate
+from mrrecon import linop
