@@ -29,7 +29,8 @@ def svd_compress(kspace, percent=0.95, k=None, calib_lines=50):
         percent (float): Used to find the least number of virtual coils that
             will produce a cumulative percentage of total eigenvalues greater
             than `percent`.
-        k (int): Top `k` number of virtual coils to keep.
+        k (int): Top `k` number of virtual coils to keep. `percent` is not used
+            if a value for `k` is provided.
         calib_lines (int): Number of lines of multicoil k-space to use in the
             SVD.
 
