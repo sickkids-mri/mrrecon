@@ -4,3 +4,4 @@ from mrrecon import coils
 from mrrecon import recon
 from mrrecon import gate
 from mrrecon import linop
+from mrrecon import plot
