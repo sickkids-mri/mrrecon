@@ -59,3 +59,31 @@ class Show3D:
             anim.save(savename, writer='imagemagick')
 
         return anim
+
+
+def imshow(img, clim=None, cmap='gray', magnif=1, savename=None):
+    """Plots a borderless image.
+
+    Args:
+        img (array): NumPy array with shape (ny, nx).
+        clim (tuple): Min and max image values to display.
+        cmap (string): Matplotlib colormap.
+        magnif (float): Factor for plotting the images at a larger/smaller
+            size.
+        savename (string): Optional. Name of png to save.
+    """
+    ny, nx = img.shape
+    # Set figure
+    f = plt.figure()
+    dpi = f.get_dpi()
+    f.set_size_inches(nx * magnif / dpi, ny * magnif / dpi)
+    ax = plt.Axes(f, [0, 0, 1, 1])
+    ax.set_axis_off()
+    f.add_axes(ax)
+    clim = (np.amin(img), np.amax(img)) if clim is None else clim
+
+    # Plot image
+    ax.imshow(img, clim=clim, cmap=cmap)
+
+    if savename is not None:
+        f.savefig(savename, dpi=dpi)
