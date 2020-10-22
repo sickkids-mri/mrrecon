@@ -2,7 +2,7 @@ import numpy as np
 
 
 def cardiac(triggers, nt, times, kspace, traj, angles=None, dcf=None):
-    """Retrospectively gates data into cardiac phases.
+    """Sorts data into cardiac phases.
 
     Args:
         triggers (array): 1D array containing cardiac trigger times (ms).
@@ -55,7 +55,7 @@ def cardiac(triggers, nt, times, kspace, traj, angles=None, dcf=None):
 
 
 def cardiac_vel(triggers, nt, times, kspace, traj, angles=None, dcf=None):
-    """Retrospectively gates velocity encoded data into cardiac phases.
+    """Sorts velocity encoded data into cardiac phases.
 
     Args:
         triggers (array): 1D array containing cardiac trigger times (ms).
