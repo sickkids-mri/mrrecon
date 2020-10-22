@@ -16,13 +16,13 @@ def cardiac(triggers, nt, times, kspace, traj, angles=None, dcf=None):
 
     Returns:
         kspace_t (list): Length `nt`.
-            Each item in the list is an array with shape (ncoils, na_c, ns).
+            Each item in the list is an array with shape (ncoils, na_t, ns).
         traj_t (list): Length `nt`.
-            Each item in the list is an array with shape (na_c, ns, ndim).
+            Each item in the list is an array with shape (na_t, ns, ndim).
         angles_t (list or None): Length `nt`.
-            Each item in the list is an array with shape (na_c, ...).
+            Each item in the list is an array with shape (na_t, ...).
         dcf_t (list or None): Length `nt`.
-            Each item in the list is an array with shape (na_c, ns).
+            Each item in the list is an array with shape (na_t, ns).
     """
     # Create bin edges
     edges = [triggers[0]]  # Very first edge
@@ -69,13 +69,13 @@ def cardiac_vel(triggers, nt, times, kspace, traj, angles=None, dcf=None):
 
     Returns:
         kspace_vt (list): List of lists. List 'shape' is (nv, nt).
-            Each item is an array with shape (ncoils, na_c, ns).
+            Each item is an array with shape (ncoils, na_t, ns).
         traj_vt (list): List of lists. List 'shape' is (nv, nt).
-            Each item is an array with shape (na_c, ns, ndim).
+            Each item is an array with shape (na_t, ns, ndim).
         angles_vt (list or None): List of lists. List 'shape' is (nv, nt).
-            Each item is an array with shape (na_c, ...).
+            Each item is an array with shape (na_t, ...).
         dcf_vt (list or None): List of lists. List 'shape' is (nv, nt).
-            Each item is an array with shape (na_c, ns).
+            Each item is an array with shape (na_t, ns).
     """
     nv = kspace.shape[1]
     times = np.reshape(times, (-1, nv))
