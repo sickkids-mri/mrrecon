@@ -8,6 +8,9 @@ import subprocess
 import re
 
 
+__all__ = ['nvidia_smi', 'nvidia_smi_memory', 'cupy_memory', 'torch_memory']
+
+
 def nvidia_smi(processes_only=False):
     """Calls the command line utility nvidia-smi."""
     completedprocess = subprocess.run('nvidia-smi',
