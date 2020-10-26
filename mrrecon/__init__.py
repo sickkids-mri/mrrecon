@@ -5,3 +5,4 @@ from mrrecon import recon
 from mrrecon import sort
 from mrrecon import linop
 from mrrecon import plot
+from mrrecon import mem
