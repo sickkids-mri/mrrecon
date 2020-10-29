@@ -111,7 +111,6 @@ class DataLoader:
             first_line = scan['mdb'][0]
             if first_line.is_image_scan():
                 self.data['kspace'].append(array)
-                self.data['slice_pos'] = first_line.mdh[22][1] #slice rotation (quaternion)
                 image_scans.append(scan)
             else:
                 # Calibration scan
@@ -250,6 +249,7 @@ class DataLoader:
 
         self.data['times'] = times
         self.data['user_float'] = np.copy(user_float.transpose())
+        self.data['rot_quat'] = line.mdh[22][1]  # logical to physical rotation quaternion
         return
 
     def _reformat(self):
