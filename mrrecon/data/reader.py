@@ -111,6 +111,7 @@ class DataLoader:
             first_line = scan['mdb'][0]
             if first_line.is_image_scan():
                 self.data['kspace'].append(array)
+                self.data['slice_pos'] = first_line.mdh[22][1] #slice rotation (quaternion)
                 image_scans.append(scan)
             else:
                 # Calibration scan
@@ -142,7 +143,6 @@ class DataLoader:
 
         # Only 'MeasYaps' was parsed and values stored dictionary
         # TODO: What happens when field/value does not exist?
-
         config = hdr['Config']
         dicom = hdr['Dicom']
 
