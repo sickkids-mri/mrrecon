@@ -6,5 +6,7 @@ from mrrecon import sort
 from mrrecon import linop
 from mrrecon import plot
 from mrrecon import mem
+from mrrecon import utils
 
 from mrrecon.mem import *
+from mrrecon.utils import *
