@@ -6,9 +6,11 @@ https://pytorch.org/docs/stable/notes/cuda.html
 """
 import subprocess
 import re
+import importlib
 
 
-__all__ = ['nvidia_smi', 'nvidia_smi_memory', 'cupy_memory', 'torch_memory']
+__all__ = ['nvidia_smi', 'nvidia_smi_memory', 'cupy_memory', 'torch_memory',
+           'cupy_free']
 
 
 def nvidia_smi(processes_only=False):
@@ -158,3 +160,24 @@ def readable_bytes(num_bytes):
 
     unit = units[idx]
     return num_bytes, unit
+
+
+def cupy_free(device=None):
+    """Frees unused memory.
+
+    Args:
+        device (int): GPU device ID (e.g. 0, 1, 2, 3, ...). If no device is
+            selected, frees memory on current CuPy device.
+    """
+    # Returns if CuPy not installed
+    if importlib.util.find_spec("cupy") is not None:
+        import cupy as cp
+    else:
+        return
+
+    if device is None:
+        device = cp.cuda.runtime.getDevice()
+
+    with cp.cuda.Device(device):
+        cp.get_default_memory_pool().free_all_blocks()
+        cp.get_default_pinned_memory_pool().free_all_blocks()
