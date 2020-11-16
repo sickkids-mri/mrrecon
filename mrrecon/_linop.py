@@ -17,8 +17,8 @@ indices. 2) Shift the index corresponding to the dimension that finite
 differences are calculated along. 3) Handle indices at the boundaries.
 4) Convert back to linear index. 5) Calculate difference.
 """
-import sigpy as sp
-if sp.config.cupy_enabled:
+import importlib
+if importlib.util.find_spec("cupy") is not None:
     import cupy as cp
 
 
