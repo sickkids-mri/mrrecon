@@ -230,7 +230,10 @@ class DataLoader:
 
         self.data['readout_os_factor'] = config['ReadoutOversamplingFactor']
         self.data['seq_filename'] = config['SequenceFileName']
-
+        try:
+            self.data['fe_nav_flag'] = hdr['MeasYaps']['sWipMemBlock']['alFree'][2] #fe nav collection flag
+        except:
+            self.data['fe_nav_flag'] = 0
         return
 
     def _read_minidataheader(self, image_scans):
@@ -324,28 +327,28 @@ class Flow4DLoader(DataLoader):
             # and the second should return True.
             first_line = scan['mdb'][0]
             second_line = scan['mdb'][1]
-            if first_line.is_image_scan():
-                raise RuntimeError('Unexpected data format. Possible that flow'
-                                   ' navigators were not collected.')
 
-            if second_line.is_image_scan():
+            if first_line.is_image_scan() or second_line.is_image_scan(): #FE navs are not always collected
+
                 image_scans.append(scan)
 
-                # Data should alternate between flow nav and k-space
-                # Number of lines of k-space and flow navigators
-                nlines = int(len(scan['mdb']) / 2)
+                if self.data['fe_nav_flag']:
+                    # Data should alternate between flow nav and k-space
+                    # Number of lines of k-space and flow navigators
+                    nlines = int(len(scan['mdb']) / 2)
+                    ncoils, nro = first_line.data.shape
+                    self.data['flownav'] = np.empty((ncoils, nlines, nro),
+                                                    dtype=np.complex64)
+                    # Check second line for size of k-space array
+                    ncoils, nro = second_line.data.shape
+                    self.data['kspace'] = np.empty((ncoils, nlines, nro),
+                                                   dtype=np.complex64)
+                else:
 
-                # Check first line for size of flow navigators array
-                ncoils, nro = first_line.data.shape
-
-                self.data['flownav'] = np.empty((ncoils, nlines, nro),
-                                                dtype=np.complex64)
-
-                # Check second line for size of k-space array
-                ncoils, nro = second_line.data.shape
-
-                self.data['kspace'] = np.empty((ncoils, nlines, nro),
-                                               dtype=np.complex64)
+                    nlines = int(len(scan['mdb']))
+                    ncoils, nro = first_line.data.shape
+                    self.data['kspace'] = np.empty((ncoils, nlines, nro),
+                                                   dtype=np.complex64)
 
                 # Loads and stores each line, and checks that flow nav and
                 # k-space alternate
@@ -362,16 +365,16 @@ class Flow4DLoader(DataLoader):
                         k += 1
                     else:
                         raise RuntimeError('Data line has unidentified flag.')
-            else:
-                # It is noise scan
-                nlines = len(scan['mdb'])
-                ncoils, nro = first_line.data.shape
+            else: #no image scan in first 2 lines
+            # It is noise scan
+            nlines = len(scan['mdb'])
+            ncoils, nro = first_line.data.shape
 
-                self.data['noise'] = np.empty((ncoils, nlines, nro),
-                                              dtype=np.complex64)
+            self.data['noise'] = np.empty((ncoils, nlines, nro),
+                                          dtype=np.complex64)
 
-                for idx, line in enumerate(scan['mdb']):
-                    self.data['noise'][:, idx, :] = line.data
+            for idx, line in enumerate(scan['mdb']):
+                self.data['noise'][:, idx, :] = line.data
 
         return image_scans
 
