@@ -332,7 +332,7 @@ class Flow4DLoader(DataLoader):
 
                 image_scans.append(scan)
 
-                if self.data['fe_nav_flag']:
+                if not first_line.is_image_scan(): #FE nav ON
                     # Data should alternate between flow nav and k-space
                     # Number of lines of k-space and flow navigators
                     nlines = int(len(scan['mdb']) / 2)
