@@ -50,3 +50,38 @@ def test_concat_arrays(flatten=False, dtype=np.complex64, device=-1):
             a0 = sp.to_device(a0)
             a1 = sp.to_device(a1)
             npt.assert_equal(a1, a0)
+
+
+def test_finite_difference():
+    """Compares to SigPy implementation of finite difference."""
+
+    ndims = [1, 2, 3, 4, 5]
+    shapes = [(1736,), (47, 99), (20, 18, 16), (5, 6, 7, 8), (12, 10, 5, 8, 9)]
+    devices = [-1, 0]
+    dtypes = [np.float32, np.complex64]
+    adjoints = [True, False]
+
+    for ndim, shape in zip(ndims, shapes):
+        for device in devices:
+            device = sp.Device(device)
+            xp = device.xp
+            with device:
+                for dtype in dtypes:
+                    x = sp.util.randn(shape, dtype=dtype, device=device)
+                    for axis in range(ndim):
+                        G = sp.linop.FiniteDifference(shape, axes=[axis])
+
+                        # Test forward finite difference
+                        y0 = G * x
+                        y0 = y0[0]  # Remove singleton dimension
+                        y = mr.linop.finite_difference(x, axis, adjoint=False)
+
+                        y0, y = sp.to_device(y0), sp.to_device(y)
+                        npt.assert_array_equal(y, y0)
+
+                        # Test adjoint finite difference
+                        y0 = G.H * xp.expand_dims(x, 0)
+                        y = mr.linop.finite_difference(x, axis, adjoint=True)
+
+                        y0, y = sp.to_device(y0), sp.to_device(y)
+                        npt.assert_array_equal(y, y0)

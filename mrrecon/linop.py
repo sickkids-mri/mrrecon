@@ -2,6 +2,8 @@ import numpy as np
 
 import sigpy as sp
 
+from mrrecon._linop import _finite_difference
+
 
 def concat_arrays(arrays, axis, flatten=False):
     """Concatenates a list of arrays.
@@ -88,3 +90,41 @@ def unconcat_arrays(array, shapes, indices, axis, flatten=False):
         arrays.append(sliced)
 
     return arrays
+
+
+def finite_difference(x, axis, out=None, adjoint=False):
+    """Calculates the finite difference of an array along one axis.
+
+    Args:
+        x (array): Input array.
+        axis (int): The axis along which differences are calculated.
+        out (array): Array in which to store the result.
+        adjoint (bool): Whether to compute the forward or adjoint finite
+            difference.
+
+    Returns:
+        out (array): Result.
+    """
+    device = sp.get_device(x)
+    xp = device.xp
+
+    ndim = x.ndim
+
+    if axis not in range(ndim):
+        raise ValueError(f'Number of dimensions of input is {ndim}, but '
+                         f'chosen axis is {axis}.')
+
+    if out is None:
+        with device:
+            out = xp.empty_like(x)
+
+    shift = -1 if adjoint else 1
+
+    if xp == np:
+        # TODO Switch to Numba implementation?
+        z = xp.roll(x, shift, axis=axis)
+        xp.subtract(x, z, out=out)
+    else:
+        _finite_difference[ndim](x, out, shift, axis)
+
+    return out
