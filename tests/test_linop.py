@@ -59,7 +59,6 @@ def test_finite_difference():
     shapes = [(1736,), (47, 99), (20, 18, 16), (5, 6, 7, 8), (12, 10, 5, 8, 9)]
     devices = [-1, 0]
     dtypes = [np.float32, np.complex64]
-    adjoints = [True, False]
 
     for ndim, shape in zip(ndims, shapes):
         for device in devices:
