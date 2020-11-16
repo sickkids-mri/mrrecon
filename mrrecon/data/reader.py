@@ -367,14 +367,14 @@ class Flow4DLoader(DataLoader):
                         raise RuntimeError('Data line has unidentified flag.')
             else: #no image scan in first 2 lines
             # It is noise scan
-            nlines = len(scan['mdb'])
-            ncoils, nro = first_line.data.shape
+                nlines = len(scan['mdb'])
+                ncoils, nro = first_line.data.shape
 
-            self.data['noise'] = np.empty((ncoils, nlines, nro),
-                                          dtype=np.complex64)
+                self.data['noise'] = np.empty((ncoils, nlines, nro),
+                                              dtype=np.complex64)
 
-            for idx, line in enumerate(scan['mdb']):
-                self.data['noise'][:, idx, :] = line.data
+                for idx, line in enumerate(scan['mdb']):
+                    self.data['noise'][:, idx, :] = line.data
 
         return image_scans
 
