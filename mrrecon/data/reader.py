@@ -356,11 +356,11 @@ class Flow4DLoader(DataLoader):
                 k = 0
                 for line in scan['mdb']:
                     if line.is_flag_set('RTFEEDBACK'):
-                        assert f == k
+                        #assert f == k
                         self.data['flownav'][:, f, :] = line.data
                         f += 1
                     elif line.is_image_scan():
-                        assert f == (k + 1)
+                        #assert f == (k + 1)
                         self.data['kspace'][:, k, :] = line.data
                         k += 1
                     else:
