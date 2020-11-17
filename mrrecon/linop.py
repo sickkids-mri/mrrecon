@@ -128,3 +128,67 @@ def finite_difference(x, axis, out=None, adjoint=False):
         _finite_difference[ndim](x, out, shift, axis)
 
     return out
+
+
+class FiniteDifference(sp.linop.Linop):
+    """SigPy linop that computes the finite difference.
+
+    Args:
+        ishape (tuple): Shape of input array.
+        axes (tuple or list): Axes to compute finite differences over. All axes
+            are included if None.
+    """
+    def __init__(self, ishape, axes=None):
+        if axes is None:
+            axes = list(range(len(ishape)))
+
+        oshape = [len(axes)] + list(ishape)
+
+        self.axes = axes
+        super().__init__(oshape, ishape)
+
+    def _apply(self, input):
+        device = sp.get_device(input)
+        xp = device.xp
+        with device:
+            output = xp.empty(self.oshape, dtype=input.dtype)
+            for n, axis in enumerate(self.axes):
+                output[n] = finite_difference(
+                    input, axis, out=None, adjoint=False)
+
+            return output
+
+    def _adjoint_linop(self):
+        return FiniteDifferenceAdjoint(self.ishape, axes=self.axes)
+
+
+class FiniteDifferenceAdjoint(sp.linop.Linop):
+    """SigPy linop that computes the adjoint finite difference.
+
+    Args:
+        oshape (tuple): Shape of output array.
+        axes (tuple or list): Axes to compute finite differences over. All axes
+            are included if None.
+    """
+    def __init__(self, oshape, axes=None):
+        if axes is None:
+            axes = list(range(len(oshape)))
+
+        ishape = [len(axes)] + list(oshape)
+
+        self.axes = axes
+        super().__init__(oshape, ishape)
+
+    def _apply(self, input):
+        device = sp.get_device(input)
+        xp = device.xp
+        with device:
+            output = xp.zeros(self.oshape, dtype=input.dtype)
+            for n, axis in enumerate(self.axes):
+                output += finite_difference(
+                    input[n], axis, out=None, adjoint=True)
+
+            return output
+
+    def _adjoint_linop(self):
+        return FiniteDifference(self.oshape, axes=self.axes)
