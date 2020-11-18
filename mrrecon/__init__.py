@@ -4,6 +4,7 @@ from mrrecon import coils
 from mrrecon import recon
 from mrrecon import sort
 from mrrecon import linop
+from mrrecon import prox
 from mrrecon import plot
 from mrrecon import mem
 from mrrecon import utils
