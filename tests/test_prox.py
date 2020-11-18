@@ -43,6 +43,3 @@ def test_soft_thresh_inplace():
 
                     x = sp.to_device(x)
                     npt.assert_array_equal(x, y)  # Test op was in-place
-
-
-test_soft_thresh_inplace()
