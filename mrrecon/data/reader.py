@@ -255,7 +255,9 @@ class DataLoader:
 
         self.data['times'] = times
         self.data['user_float'] = np.copy(user_float.transpose())
-        self.data['rot_quat'] = line.mdh[22][1]  # logical to physical rotation quaternion
+
+        # Logical to physical rotation quaternion
+        self.data['rot_quat'] = line.mdh[22][1]
         return
 
     def _reformat(self):
