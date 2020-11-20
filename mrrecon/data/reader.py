@@ -230,10 +230,13 @@ class DataLoader:
 
         self.data['readout_os_factor'] = config['ReadoutOversamplingFactor']
         self.data['seq_filename'] = config['SequenceFileName']
+
+        # Flow encoding navigators collection flag
         try:
-            self.data['fe_nav_flag'] = hdr['MeasYaps']['sWipMemBlock']['alFree'][2] #fe nav collection flag
-        except:
+            self.data['fe_nav_flag'] = hdr['MeasYaps']['sWipMemBlock']['alFree'][2]  # noqa
+        except IndexError:
             self.data['fe_nav_flag'] = 0
+
         return
 
     def _read_minidataheader(self, image_scans):
