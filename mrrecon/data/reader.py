@@ -337,24 +337,23 @@ class Flow4DLoader(DataLoader):
 
                 image_scans.append(scan)
 
+                # Total number of lines
+                nlines = int(len(scan['mdb']))
+
                 if not first_line.is_image_scan():
                     # Then FE navs were acquired
                     # Data should alternate between flow nav and k-space
 
-                    # Number of lines of k-space and flow navigators
-                    nlines = int(len(scan['mdb']) / 2)
-
                     # Check first line for size of FE navigators array
                     ncoils, nro = first_line.data.shape
-                    self.data['flownav'] = np.empty((ncoils, nlines, nro),
+                    self.data['flownav'] = np.empty((ncoils, nlines // 2, nro),
                                                     dtype=np.complex64)
                     # Check second line for size of k-space array
                     ncoils, nro = second_line.data.shape
-                    self.data['kspace'] = np.empty((ncoils, nlines, nro),
+                    self.data['kspace'] = np.empty((ncoils, nlines // 2, nro),
                                                    dtype=np.complex64)
                 else:
                     # FE navs were not acquired
-                    nlines = int(len(scan['mdb']))
                     ncoils, nro = first_line.data.shape
                     self.data['kspace'] = np.empty((ncoils, nlines, nro),
                                                    dtype=np.complex64)
