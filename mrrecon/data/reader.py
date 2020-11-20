@@ -331,7 +331,7 @@ class Flow4DLoader(DataLoader):
             first_line = scan['mdb'][0]
             second_line = scan['mdb'][1]
 
-            if first_line.is_image_scan() or second_line.is_image_scan():  # Then this is an image scan
+            if second_line.is_image_scan():  # Then this is an image scan
                 # The first line may or may not be is_image_scan(), depending
                 # on whether or not flow encoding navigators were acquired.
 
