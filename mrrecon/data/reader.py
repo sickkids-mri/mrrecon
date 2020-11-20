@@ -342,12 +342,12 @@ class Flow4DLoader(DataLoader):
 
                 if not first_line.is_image_scan():
                     # Then FE navs were acquired
-                    # Data should alternate between flow nav and k-space
+                    # Data should alternate between FE nav and k-space
 
                     # Check first line for size of FE navigators array
                     ncoils, nro = first_line.data.shape
-                    self.data['flownav'] = np.empty((ncoils, nlines // 2, nro),
-                                                    dtype=np.complex64)
+                    self.data['fe_nav'] = np.empty((ncoils, nlines // 2, nro),
+                                                   dtype=np.complex64)
                     # Check second line for size of k-space array
                     ncoils, nro = second_line.data.shape
                     self.data['kspace'] = np.empty((ncoils, nlines // 2, nro),
@@ -363,7 +363,7 @@ class Flow4DLoader(DataLoader):
                 k = 0
                 for line in scan['mdb']:
                     if line.is_flag_set('RTFEEDBACK'):
-                        self.data['flownav'][:, f, :] = line.data
+                        self.data['fe_nav'][:, f, :] = line.data
                         f += 1
                     elif line.is_image_scan():
                         self.data['kspace'][:, k, :] = line.data
@@ -401,13 +401,13 @@ class Flow4DLoader(DataLoader):
         tmp = None
 
         # Recalculate times at higher precision
-        # Take the second time stamp, the first is flow navigator
+        # Take the second time stamp, the first is FE navigator
         time0 = self.data['times'][1]
         times = np.linspace(time0,
                             time0 + (nlines - 1) * (self.data['tr'] / nv),
                             num=nlines, dtype=np.float32)
         self.data['times'] = times
 
-        # Discard the user-defined measurements from flow navigators
+        # Discard the user-defined measurements from FE navigators
         self.data['user_float'] = self.data['user_float'][:, 1::2]
         return
