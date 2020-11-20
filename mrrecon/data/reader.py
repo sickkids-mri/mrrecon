@@ -403,7 +403,8 @@ class Flow4DLoader(DataLoader):
         tmp = None
 
         # Recalculate times at higher precision
-        if self.data['fe_nav_flag']:
+        fe_nav_acquired = 'fe_nav' in self.data.keys()
+        if fe_nav_acquired:
             # Take the second time stamp, the first is FE navigator
             time0 = self.data['times'][1]
         else:
@@ -414,7 +415,7 @@ class Flow4DLoader(DataLoader):
                             num=nlines, dtype=np.float32)
         self.data['times'] = times
 
-        if self.data['fe_nav_flag']:
+        if fe_nav_acquired:
             # Discard the user-defined measurements from FE navigators
             self.data['user_float'] = self.data['user_float'][:, 1::2]
 
