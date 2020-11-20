@@ -331,14 +331,20 @@ class Flow4DLoader(DataLoader):
             first_line = scan['mdb'][0]
             second_line = scan['mdb'][1]
 
-            if first_line.is_image_scan() or second_line.is_image_scan(): #FE navs are not always collected
+            if first_line.is_image_scan() or second_line.is_image_scan():  # Then this is an image scan
+                # The first line may or may not be is_image_scan(), depending
+                # on whether or not flow encoding navigators were acquired.
 
                 image_scans.append(scan)
 
-                if not first_line.is_image_scan(): #FE nav ON
+                if not first_line.is_image_scan():
+                    # Then FE navs were acquired
                     # Data should alternate between flow nav and k-space
+
                     # Number of lines of k-space and flow navigators
                     nlines = int(len(scan['mdb']) / 2)
+
+                    # Check first line for size of FE navigators array
                     ncoils, nro = first_line.data.shape
                     self.data['flownav'] = np.empty((ncoils, nlines, nro),
                                                     dtype=np.complex64)
@@ -347,29 +353,27 @@ class Flow4DLoader(DataLoader):
                     self.data['kspace'] = np.empty((ncoils, nlines, nro),
                                                    dtype=np.complex64)
                 else:
-
+                    # FE navs were not acquired
                     nlines = int(len(scan['mdb']))
                     ncoils, nro = first_line.data.shape
                     self.data['kspace'] = np.empty((ncoils, nlines, nro),
                                                    dtype=np.complex64)
 
-                # Loads and stores each line, and checks that flow nav and
-                # k-space alternate
+                # Loads and stores each line
                 f = 0
                 k = 0
                 for line in scan['mdb']:
                     if line.is_flag_set('RTFEEDBACK'):
-                        #assert f == k
                         self.data['flownav'][:, f, :] = line.data
                         f += 1
                     elif line.is_image_scan():
-                        #assert f == (k + 1)
                         self.data['kspace'][:, k, :] = line.data
                         k += 1
                     else:
                         raise RuntimeError('Data line has unidentified flag.')
-            else: #no image scan in first 2 lines
-            # It is noise scan
+
+            else:
+                # It is noise scan
                 nlines = len(scan['mdb'])
                 ncoils, nro = first_line.data.shape
 
