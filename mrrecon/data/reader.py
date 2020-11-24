@@ -142,7 +142,6 @@ class DataLoader:
 
         # Only 'MeasYaps' was parsed and values stored dictionary
         # TODO: What happens when field/value does not exist?
-
         config = hdr['Config']
         dicom = hdr['Dicom']
 
@@ -232,6 +231,12 @@ class DataLoader:
         self.data['readout_os_factor'] = config['ReadoutOversamplingFactor']
         self.data['seq_filename'] = config['SequenceFileName']
 
+        # Flow encoding navigators collection flag
+        try:
+            self.data['fe_nav_flag'] = hdr['MeasYaps']['sWipMemBlock']['alFree'][2]  # noqa
+        except IndexError:
+            self.data['fe_nav_flag'] = 0
+
         return
 
     def _read_minidataheader(self, image_scans):
@@ -250,6 +255,9 @@ class DataLoader:
 
         self.data['times'] = times
         self.data['user_float'] = np.copy(user_float.transpose())
+
+        # Logical to physical rotation quaternion
+        self.data['rot_quat'] = line.mdh[22][1]
         return
 
     def _reformat(self):
@@ -324,44 +332,47 @@ class Flow4DLoader(DataLoader):
             # and the second should return True.
             first_line = scan['mdb'][0]
             second_line = scan['mdb'][1]
-            if first_line.is_image_scan():
-                raise RuntimeError('Unexpected data format. Possible that flow'
-                                   ' navigators were not collected.')
 
-            if second_line.is_image_scan():
+            if second_line.is_image_scan():  # Then this is an image scan
+                # The first line may or may not be is_image_scan(), depending
+                # on whether or not flow encoding navigators were acquired.
+
                 image_scans.append(scan)
 
-                # Data should alternate between flow nav and k-space
-                # Number of lines of k-space and flow navigators
-                nlines = int(len(scan['mdb']) / 2)
+                # Total number of lines
+                nlines = int(len(scan['mdb']))
 
-                # Check first line for size of flow navigators array
-                ncoils, nro = first_line.data.shape
+                if not first_line.is_image_scan():
+                    # Then FE navs were acquired
+                    # Data should alternate between FE nav and k-space
 
-                self.data['flownav'] = np.empty((ncoils, nlines, nro),
-                                                dtype=np.complex64)
+                    # Check first line for size of FE navigators array
+                    ncoils, nro = first_line.data.shape
+                    self.data['fe_nav'] = np.empty((ncoils, nlines // 2, nro),
+                                                   dtype=np.complex64)
+                    # Check second line for size of k-space array
+                    ncoils, nro = second_line.data.shape
+                    self.data['kspace'] = np.empty((ncoils, nlines // 2, nro),
+                                                   dtype=np.complex64)
+                else:
+                    # FE navs were not acquired
+                    ncoils, nro = first_line.data.shape
+                    self.data['kspace'] = np.empty((ncoils, nlines, nro),
+                                                   dtype=np.complex64)
 
-                # Check second line for size of k-space array
-                ncoils, nro = second_line.data.shape
-
-                self.data['kspace'] = np.empty((ncoils, nlines, nro),
-                                               dtype=np.complex64)
-
-                # Loads and stores each line, and checks that flow nav and
-                # k-space alternate
+                # Loads and stores each line
                 f = 0
                 k = 0
                 for line in scan['mdb']:
                     if line.is_flag_set('RTFEEDBACK'):
-                        assert f == k
-                        self.data['flownav'][:, f, :] = line.data
+                        self.data['fe_nav'][:, f, :] = line.data
                         f += 1
                     elif line.is_image_scan():
-                        assert f == (k + 1)
                         self.data['kspace'][:, k, :] = line.data
                         k += 1
                     else:
                         raise RuntimeError('Data line has unidentified flag.')
+
             else:
                 # It is noise scan
                 nlines = len(scan['mdb'])
@@ -392,13 +403,20 @@ class Flow4DLoader(DataLoader):
         tmp = None
 
         # Recalculate times at higher precision
-        # Take the second time stamp, the first is flow navigator
-        time0 = self.data['times'][1]
+        fe_nav_acquired = 'fe_nav' in self.data.keys()
+        if fe_nav_acquired:
+            # Take the second time stamp, the first is FE navigator
+            time0 = self.data['times'][1]
+        else:
+            time0 = self.data['times'][0]
+
         times = np.linspace(time0,
                             time0 + (nlines - 1) * (self.data['tr'] / nv),
                             num=nlines, dtype=np.float32)
         self.data['times'] = times
 
-        # Discard the user-defined measurements from flow navigators
-        self.data['user_float'] = self.data['user_float'][:, 1::2]
+        if fe_nav_acquired:
+            # Discard the user-defined measurements from FE navigators
+            self.data['user_float'] = self.data['user_float'][:, 1::2]
+
         return
