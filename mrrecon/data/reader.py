@@ -66,9 +66,6 @@ class DataLoader:
     The original data structure output from twixtools can also be accessed
     (attribute name is `scan_list`).
 
-    By default, scalars are stored as either Python `int`s or `float`s, and
-    arrays are stored as either `np.float32` or `np.complex64`.
-
     Args:
         filename (str): Full name of raw data file.
 
@@ -246,8 +243,8 @@ class DataLoader:
 
         nlines = len(scan['mdb'])
 
-        times = np.zeros((nlines), dtype=np.float32)
-        user_float = np.zeros((nlines, 24), dtype=np.float32)
+        times = np.zeros((nlines), dtype=np.float64)
+        user_float = np.zeros((nlines, 24), dtype=np.float64)
 
         for idx, line in enumerate(scan['mdb']):
             times[idx] = line.mdh['ulTimeStamp'] * 2.5
@@ -285,7 +282,7 @@ class DataLoader:
         time0 = self.data['times'][0]
         times = np.linspace(time0,
                             time0 + (nlines - 1) * (self.data['tr'] / nv),
-                            num=nlines, dtype=np.float32)
+                            num=nlines, dtype=np.float64)
         self.data['times'] = times
         return
 
@@ -412,7 +409,7 @@ class Flow4DLoader(DataLoader):
 
         times = np.linspace(time0,
                             time0 + (nlines - 1) * (self.data['tr'] / nv),
-                            num=nlines, dtype=np.float32)
+                            num=nlines, dtype=np.float64)
         self.data['times'] = times
 
         if fe_nav_acquired:
