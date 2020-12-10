@@ -1,3 +1,5 @@
+import numpy as np
+
 import sigpy as sp
 
 
@@ -64,3 +66,63 @@ def psf(traj, dcf=None, fov_scale=2, img_shape=None):
         psf = sp.nufft_adjoint(ones, traj, img_shape)
 
     return psf
+
+
+def detect_steady_state(signal):
+    """Detects when a signal reaches steady state.
+
+    Args:
+        signal (array): 1D float array containing signal that can be used to
+            detect when the scan has reached steady state, e.g. magnitude of
+            centre of k-space.
+
+    Returns:
+        ind (int): Point in signal where steady state was detected to begin.
+    """
+    # Find mean and spread of last half of signal,
+    # which should be in steady state
+    t = int(len(signal) / 2)  # Index at half
+    last_half = signal[t:]
+    last_half_mean = np.mean(last_half)
+    last_half_std = np.std(last_half)
+
+    ss_signal_thresh = last_half_mean + 6 * last_half_std
+    if np.any(signal > ss_signal_thresh):
+        # Then assumes signal contains non-steady state signal
+
+        # Fit an exponential to the signal
+        def exp(x, a, b, c, d):
+            return a * np.exp(-b * (x - c)) + d
+
+        x = np.linspace(0, 1, num=len(signal))
+        # Estimate initial parameters
+        p0 = np.ones(4, dtype=np.float64)
+        p0[2] = 0  # Start c at 0
+        p0[3] = last_half_mean
+        p0[0] = signal[0] - p0[3]  # When x = 0
+        p0[1] = - np.log((signal[1] - p0[3]) / p0[0]) / x[1]
+
+        from scipy.optimize import curve_fit
+        popt, pcov = curve_fit(exp, x, signal, p0=p0, maxfev=1000000)
+        fitted = exp(x, *popt)
+
+        # Find percentage of range
+        drange = (signal.max() - fitted.min()) * 0.01
+        deltas = fitted - fitted.min()
+        conds = (deltas > drange)
+        x_inds = np.argwhere(conds)
+        # Could be empty if the exponential didn't fit the beginning
+        if not (x_inds.size == 0):
+            ind = np.max(x_inds)
+        else:
+            raise RuntimeError('Steady state signal fitting failed.')
+
+    else:
+        # Entire signal is at steady state
+        ind = 0
+
+    # Multiply this number by a factor of 2, which heuristically moves the
+    # spoke number to a better steady state point
+    ind *= 2
+
+    return ind
