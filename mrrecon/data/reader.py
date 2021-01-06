@@ -283,7 +283,10 @@ class DataLoader:
         times = np.linspace(time0,
                             time0 + (nlines - 1) * (self.data['tr'] / nv),
                             num=nlines, dtype=np.float64)
-        self.data['times'] = times
+        # TODO Temporarily keeping this here. times_recalculated should be
+        # wrong if TR is reported incorrectly. Keeping this here to check TR
+        # accuracy
+        self.data['times_recalculated'] = times
         return
 
 
@@ -410,9 +413,15 @@ class Flow4DLoader(DataLoader):
         times = np.linspace(time0,
                             time0 + (nlines - 1) * (self.data['tr'] / nv),
                             num=nlines, dtype=np.float64)
-        self.data['times'] = times
+        # TODO Temporarily keeping this here. times_recalculated should be
+        # wrong if TR is reported incorrectly. Keeping this here to check TR
+        # accuracy
+        self.data['times_recalculated'] = times
 
         if fe_nav_acquired:
+            # Discard time stamps of FE navs (only do this if times is not
+            # holding the recalculated times) TODO
+            self.data['times'] = self.data['times'][1::2]
             # Discard the user-defined measurements from FE navigators
             self.data['user_float'] = self.data['user_float'][:, 1::2]
 
