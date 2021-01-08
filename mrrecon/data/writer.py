@@ -8,7 +8,6 @@ def write_to_dicom(data, img, outdir):
     nv = img.shape[0]
     nframes = img.shape[1]
     nSlices = img.shape[-1]
-    slice_num_array = np.arange(nSlices)
     slTh = data['dz']
 
     img_norm = normalize_pc(img)
@@ -42,6 +41,19 @@ def write_to_dicom(data, img, outdir):
     ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
     ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
 
+    tmp = measyaps['sSliceArray']['asSlice'][0]['sNormal']
+    tmpstr = list(data['slice_normal'])[0][1::]
+    ds[(0x0051, 0x100e)].value = tmpstr
+    Sag_inc, Tra_inc, Cor_inc = 0, 0, 0
+    if 'Tra' in tmpstr:
+        Tra_inc = tmp['dTra']
+    elif 'Sag' in tmpstr:
+        Sag_inc = tmp['dSag']
+    elif 'Cor' in tmpstr:
+        Cor_inc = tmp['dCor']
+
+    slice_num_array = np.arange(nSlices)
+    frame_array = (0, ds.NominalInterval, ds.NominalInterval/nframes)
 
 def normalize_pc(img, new_max=4096):
     """Normalizes and casts phase contrast image to uint16 for dicom writing.
