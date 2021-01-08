@@ -227,6 +227,8 @@ class DataLoader:
 
         self.data['readout_os_factor'] = config['ReadoutOversamplingFactor']
         self.data['seq_filename'] = config['SequenceFileName']
+        self.data['protocol_name'] = hdr['MeasYaps']['tProtocolName']
+        self.data['slice_normal'] = hdr['MeasYaps']['sSliceArray']['asSlice'][0]['sNormal']
 
         # Flow encoding navigators collection flag
         try:

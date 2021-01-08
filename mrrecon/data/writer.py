@@ -6,6 +6,11 @@ def write_to_dicom(data, img, outdir):
     import pydicom
     import numpy as np
     nv = img.shape[0]
+    nframes = img.shape[1]
+    nSlices = img.shape[-1]
+    slice_num_array = np.arange(nSlices)
+    slTh = data['dz']
+
     img_norm = normalize_pc(img)
 
     # read in dummy dicom files for each flow encode
@@ -18,6 +23,24 @@ def write_to_dicom(data, img, outdir):
             ds = pydicom.dcmread(os.path.join(thisdir, '3.ima'))
         elif fe == 3:
             ds = pydicom.dcmread(os.path.join(thisdir, '4.ima'))
+
+    SOPInstanceUID_str = ds.SOPInstanceUID
+    startTime = 0
+    timeres = 0.1 #dummy value for now. TODO: change to RR_avg/nframes
+    ds.NominalInterval = nframes * timeres * 1000 #TODO: change to RR_avg
+    ds.CardiacNumberOfImages = nframes
+    ds.Rows = img.shape[-3]
+    ds.Columns = img.shape[-2]
+    ds.Width = img.shape[-3]
+    ds.Height = img.shape[-2]
+    ds.PixelSpacing = [data['dx'], data['dy']]
+    ds.PercentSampling = 100
+    ds.PercentPhaseFieldOfView = img.shape[-2] / img.shape[-3] * 100 #assuming square voxels here
+    ds.SliceThickness = data['dz']
+    ds.NumberOfPhaseEncodingSteps = img.shape[-2]
+    ds.AcquisitionMatrix = [0, img.shape[-3], img.shape[-2], img.shape[-1]]
+    ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
+    ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
 
 
 def normalize_pc(img, new_max=4096):
