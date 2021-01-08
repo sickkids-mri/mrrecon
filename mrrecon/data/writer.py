@@ -1,10 +1,22 @@
 
 import numpy as np
 
-def write_to_dicom(data,hdr):
-    import dicom
+def write_to_dicom(data, img, outdir):
+    import pydicom
+    import numpy as np
+    nv = img.shape[0]
+    img_norm = normalize_pc(img)
 
-import numpy as np
+    # read in dummy dicom files for each flow encode
+    for fe in np.arange(nv):
+        if fe == 0:
+            ds = pydicom.dcmread('1.ima')
+        elif fe == 1:
+            ds = pydicom.dcmread('2.ima')
+        elif fe == 2:
+            ds = pydicom.dcmread('3.ima')
+        elif fe == 3:
+            ds = pydicom.dcmread('4.ima')
 
 
 def normalize_pc(img, new_max=4096):
