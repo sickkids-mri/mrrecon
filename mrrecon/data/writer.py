@@ -1,4 +1,5 @@
-
+import os
+thisdir = os.path.dirname(__file__)
 import numpy as np
 
 def write_to_dicom(data, img, outdir):
@@ -10,13 +11,13 @@ def write_to_dicom(data, img, outdir):
     # read in dummy dicom files for each flow encode
     for fe in np.arange(nv):
         if fe == 0:
-            ds = pydicom.dcmread('1.ima')
+            ds = pydicom.dcmread(os.path.join(thisdir, '1.ima'))
         elif fe == 1:
-            ds = pydicom.dcmread('2.ima')
+            ds = pydicom.dcmread(os.path.join(thisdir, '2.ima'))
         elif fe == 2:
-            ds = pydicom.dcmread('3.ima')
+            ds = pydicom.dcmread(os.path.join(thisdir, '3.ima'))
         elif fe == 3:
-            ds = pydicom.dcmread('4.ima')
+            ds = pydicom.dcmread(os.path.join(thisdir, '4.ima'))
 
 
 def normalize_pc(img, new_max=4096):
