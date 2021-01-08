@@ -179,3 +179,73 @@ def hr_to_triggers(hr, first, last):
     num_beats = math.ceil((last - first) / rr) + 1
     triggers = np.arange(num_beats) * rr + first
     return triggers
+
+
+def read_trigger_log(filename):
+    """Python translation of CWR_EXT_log.m.
+
+    Reads peripheral monitor unit (PMU) measurements and identifies cardiac
+    trigger times. At least that's what I think it does, no description was
+    provided to me.
+
+    Args:
+        filename (str): Name of the file to be read and processed.
+
+    Returns:
+        triggers (array): Trigger times (ms).
+    """
+    # List of words in the file (delimited by spaces or newlines)
+    words = []
+
+    with open(filename, 'r') as f:
+        # Reads file line by line
+        for line in f:
+            # Removes newlines  # TODO: split() with no arg might accomplish
+            line = line.rstrip('\n')
+            # Removes multiple spaces from the line
+            # Checks to see if line contains double spaces
+            remove_multiple_spaces = '  ' in line
+            while remove_multiple_spaces:
+                # Replaces double spaces with single space
+                line = line.replace('  ', ' ')
+                remove_multiple_spaces = '  ' in line
+
+            # Appends words in this line to the list of words
+            words += line.split(' ')
+
+    # Finds the MDH start time (which is one index after the name)
+    starttime = words[words.index('LogStartMDHTime:') + 1]
+    starttime = float(starttime)
+
+    # Now starts the part that makes no sense to me
+    count = 1
+    header = 0
+    triggers = {}  # No idea what the values are that this holds
+    num_skip = 5  # Number of words to skip
+    for a in range(num_skip, len(words)):
+        try:
+            val = float(words[a])
+        except ValueError:
+            val = float('nan')  # Not all words are numbers
+
+        if val in [5002, 5003]:
+            header = 1
+        elif val == 6002:
+            header = 0
+
+        if val == 5000:
+            triggers[count-1] = 5000
+        elif val == 6000:
+            triggers[count-1] = 6000
+
+        if (header == 0) and (val < 4999):
+            triggers[count] = val
+            count += 1
+
+    # Convert dictionary to array
+    triggers = np.array(list(triggers.values()))
+
+    t = np.linspace(starttime, starttime + (len(triggers) - 1)*2.5,
+                    num=len(triggers), endpoint=True)
+    triggers = t[triggers == 5000]
+    return triggers
