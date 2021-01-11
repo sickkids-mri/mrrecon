@@ -86,7 +86,7 @@ def write_to_dicom(data, img, outdir):
                     ds[(0x0051, 0x1016)].value = 'p2 M/RETRO/DIS2D'
 
                 if fe == 1:
-                    outfilename = outdir + '/I_Vx_ph' + str(iframe) + '_' + str(islice) + '.ima'ipy
+                    outfilename = outdir + '/I_Vx_ph' + str(iframe) + '_' + str(islice) + '.ima'
                     ds.SeriesNumber = 2
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
