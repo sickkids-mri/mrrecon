@@ -257,6 +257,9 @@ class DataLoader:
 
         # Logical to physical rotation quaternion
         self.data['rot_quat'] = line.mdh[22][1]
+
+        # Slice position
+        self.data['slice_pos'] = line.mdh[22][0]
         return
 
     def _reformat(self):

@@ -1,6 +1,7 @@
 import os
 thisdir = os.path.dirname(__file__)
 import numpy as np
+import ndflow as nf
 
 def write_to_dicom(data, img, outdir):
     import pydicom
@@ -12,6 +13,7 @@ def write_to_dicom(data, img, outdir):
 
     img_norm = normalize_pc(img)
 
+    counter = 0
     # read in dummy dicom files for each flow encode
     for fe in np.arange(nv):
         if fe == 0:
@@ -23,38 +25,92 @@ def write_to_dicom(data, img, outdir):
         elif fe == 3:
             ds = pydicom.dcmread(os.path.join(thisdir, '4.ima'))
 
-    SOPInstanceUID_str = ds.SOPInstanceUID
-    startTime = 0
-    timeres = 0.1 #dummy value for now. TODO: change to RR_avg/nframes
-    ds.NominalInterval = nframes * timeres * 1000 #TODO: change to RR_avg
-    ds.CardiacNumberOfImages = nframes
-    ds.Rows = img.shape[-3]
-    ds.Columns = img.shape[-2]
-    ds.Width = img.shape[-3]
-    ds.Height = img.shape[-2]
-    ds.PixelSpacing = [data['dx'], data['dy']]
-    ds.PercentSampling = 100
-    ds.PercentPhaseFieldOfView = img.shape[-2] / img.shape[-3] * 100 #assuming square voxels here
-    ds.SliceThickness = data['dz']
-    ds.NumberOfPhaseEncodingSteps = img.shape[-2]
-    ds.AcquisitionMatrix = [0, img.shape[-3], img.shape[-2], img.shape[-1]]
-    ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
-    ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
+        SOPInstanceUID_str = ds.SOPInstanceUID
+        startTime = 0
+        timeres = 0.1 #dummy value for now. TODO: change to RR_avg/nframes
+        ds.NominalInterval = nframes * timeres * 1000 #TODO: change to RR_avg
+        ds.CardiacNumberOfImages = nframes
+        ds.Rows = img.shape[-3]
+        ds.Columns = img.shape[-2]
+        ds.Width = img.shape[-3]
+        ds.Height = img.shape[-2]
+        ds.PixelSpacing = [data['dx'], data['dy']]
+        ds.PercentSampling = 100
+        ds.PercentPhaseFieldOfView = img.shape[-2] / img.shape[-3] * 100 #assuming square voxels here
+        ds.SliceThickness = data['dz']
+        ds.NumberOfPhaseEncodingSteps = img.shape[-2]
+        ds.AcquisitionMatrix = [0, img.shape[-3], img.shape[-2], img.shape[-1]]
+        ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
+        ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
 
-    tmp = measyaps['sSliceArray']['asSlice'][0]['sNormal']
-    tmpstr = list(data['slice_normal'])[0][1::]
-    ds[(0x0051, 0x100e)].value = tmpstr
-    Sag_inc, Tra_inc, Cor_inc = 0, 0, 0
-    if 'Tra' in tmpstr:
-        Tra_inc = tmp['dTra']
-    elif 'Sag' in tmpstr:
-        Sag_inc = tmp['dSag']
-    elif 'Cor' in tmpstr:
-        Cor_inc = tmp['dCor']
+        tmp = measyaps['sSliceArray']['asSlice'][0]['sNormal']
+        tmpstr = list(data['slice_normal'])[0][1::]
+        ds[(0x0051, 0x100e)].value = tmpstr
+        Sag_inc, Tra_inc, Cor_inc = 0, 0, 0
+        if 'Tra' in tmpstr:
+            Tra_inc = tmp['dTra']
+        elif 'Sag' in tmpstr:
+            Sag_inc = tmp['dSag']
+        elif 'Cor' in tmpstr:
+            Cor_inc = tmp['dCor']
 
-    slice_num_array = np.arange(nSlices)
-    frame_array = (0, ds.NominalInterval, ds.NominalInterval/nframes)
+        R = nf.traj.rot_from_quat(data['rot_quat'])
+        newR = np.matmul(R , np.array([[1,0],[0,1],[0,0]])) #take only first two columns
+        ds.ImageOrientationPatient[:] = np.ravel(np.transpose(newR)).tolist()
 
+        imPos = data['slice_pos']
+        imPos_edge = (imPos - data['fovx'] / 2 * newR[:, 0] - data['fovy'] / 2 * newR[:, 1]
+                     - data['fovz'] / 2 * (np.array([Sag_inc , Cor_inc , Tra_inc])))
+
+        slice_num_array = np.arange(nSlices)
+        frame_array = (0, ds.NominalInterval, ds.NominalInterval/nframes)
+
+        for iframe in np.arange(nframes):
+            ds.TriggerTime = frame_array[iframe]
+            ds.InstanceCreationTime = str(startTime + frame_array[iframe]/1000)
+            ds.ContentTime = str(startTime + frame_array[iframe]/1000)
+
+            for islice in np.arange(1,nSlices,1):
+                imPos_slice = imPos_edge + slTh*islice*np.array([Sag_inc , Cor_inc , Tra_inc])
+                ds.SliceLocation = imPos_slice[1]
+                ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
+                ds[(0x0019,0x1015)].value[:] = imPos_slice.tolist()
+
+                if fe == 0:
+                    outfilename = outdir + '/I_MAG_ph' + str(iframe) + '_' + str(islice) + '.ima'
+                    ds.SeriesNumber = 1
+                    ds.ImageType = ['ORIGINAL', 'PRIMARY', 'M', 'RETRO', 'DIS2D']
+                    ds[(0x0051, 0x1016)].value = 'p2 M/RETRO/DIS2D'
+
+                if fe == 1:
+                    outfilename = outdir + '/I_Vx_ph' + str(iframe) + '_' + str(islice) + '.ima' \
+                    ds.SeriesNumber = 2
+                    ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
+                    ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
+
+                if fe == 2:
+                    outfilename = outdir + '/I_Vy_ph' + str(iframe) + '_' + str(islice) + '.ima'
+                    ds.SeriesNumber = 3
+                    ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
+                    ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
+
+                if fe == 3:
+                    outfilename = outdir + '/I_Vz_ph' + str(iframe) + '_' + str(islice) + '.ima'
+                    ds.SeriesNumber = 4
+                    ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
+                    ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
+
+                ds.PixelData = img[fe , iframe, : , : , islice]
+                tmpstr = SOPInstanceUID_str.rsplit('.', 1)[0]
+                tmpstr = tmpstr + counter
+                ds.SOPInstanceUID = tmpstr  #need a different UID for each image
+                ds.save_as(outfilename)
+
+                counter += 1
+
+
+    return(counter)
+                
 def normalize_pc(img, new_max=4096):
     """Normalizes and casts phase contrast image to uint16 for dicom writing.
 
