@@ -256,7 +256,7 @@ class DataLoader:
         self.data['user_float'] = np.copy(user_float.transpose())
 
         # Logical to physical rotation quaternion
-        self.data['rot_quat'] = line.mdh[22][1]
+        self.data['rot_quat'] = np.array(line.mdh[22][1].to_list())
 
         # Slice position
         self.data['slice_pos'] = np.array(line.mdh[22][0].tolist())
