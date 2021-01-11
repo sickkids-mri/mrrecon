@@ -259,7 +259,7 @@ class DataLoader:
         self.data['rot_quat'] = line.mdh[22][1]
 
         # Slice position
-        self.data['slice_pos'] = line.mdh[22][0]
+        self.data['slice_pos'] = np.array(line.mdh[22][0].tolist())
         return
 
     def _reformat(self):
