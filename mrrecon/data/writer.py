@@ -7,9 +7,12 @@ def write_to_dicom(data, img, outdir):
     import pydicom
     import numpy as np
     nv = img.shape[0]
-    nframes = img.shape[1]
     nSlices = img.shape[-1]
     slTh = data['dz']
+    if len(img.shape) < 5:
+        nframes = 1
+    else:
+        nframes = img.shape[1]
 
     img_norm = normalize_pc(img)
 
@@ -43,7 +46,7 @@ def write_to_dicom(data, img, outdir):
         ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
         ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
 
-        tmp = measyaps['sSliceArray']['asSlice'][0]['sNormal']
+        tmp = data['slice_normal']
         tmpstr = list(data['slice_normal'])[0][1::]
         ds[(0x0051, 0x100e)].value = tmpstr
         Sag_inc, Tra_inc, Cor_inc = 0, 0, 0
@@ -83,7 +86,7 @@ def write_to_dicom(data, img, outdir):
                     ds[(0x0051, 0x1016)].value = 'p2 M/RETRO/DIS2D'
 
                 if fe == 1:
-                    outfilename = outdir + '/I_Vx_ph' + str(iframe) + '_' + str(islice) + '.ima' \
+                    outfilename = outdir + '/I_Vx_ph' + str(iframe) + '_' + str(islice) + '.ima'
                     ds.SeriesNumber = 2
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
@@ -110,7 +113,7 @@ def write_to_dicom(data, img, outdir):
 
 
     return(counter)
-                
+
 def normalize_pc(img, new_max=4096):
     """Normalizes and casts phase contrast image to uint16 for dicom writing.
 
