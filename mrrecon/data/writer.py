@@ -20,13 +20,13 @@ def write_to_dicom(data, img, outdir):
     # read in dummy dicom files for each flow encode
     for fe in np.arange(nv):
         if fe == 0:
-            ds = pydicom.dcmread(os.path.join(thisdir, '1.ima'))
+            ds = pydicom.dcmread(os.path.join(thisdir, 'DummyDicoms/1.ima'))
         elif fe == 1:
-            ds = pydicom.dcmread(os.path.join(thisdir, '2.ima'))
+            ds = pydicom.dcmread(os.path.join(thisdir, 'DummyDicoms/2.ima'))
         elif fe == 2:
-            ds = pydicom.dcmread(os.path.join(thisdir, '3.ima'))
+            ds = pydicom.dcmread(os.path.join(thisdir, 'DummyDicoms/3.ima'))
         elif fe == 3:
-            ds = pydicom.dcmread(os.path.join(thisdir, '4.ima'))
+            ds = pydicom.dcmread(os.path.join(thisdir, 'DummyDicoms/4.ima'))
 
         SOPInstanceUID_str = ds.SOPInstanceUID
         startTime = 0
