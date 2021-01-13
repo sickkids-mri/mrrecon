@@ -98,14 +98,14 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
-                if fe == 2:
+                if fe == 3:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'ap'
                     outfilename = outdir + '/I_Vy_ph' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
                     ds.SeriesNumber = 3
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
-                if fe == 3:
+                if fe == 2:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'rl'
                     outfilename = outdir + '/I_Vx_ph' + str(iframe) + '_' + str(islice) + '.ima'
                     ds.SeriesNumber = 2
