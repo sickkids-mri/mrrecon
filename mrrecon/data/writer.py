@@ -7,7 +7,6 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
     import pydicom
     import numpy as np
     nv = img.shape[0]
-    nSlices = img.shape[-1]
     slTh = data['dz']
     if len(img.shape) < 5:
         nframes = 1
@@ -68,7 +67,9 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
 
         if slices_to_include is not None:
             slice_num_array = slices_to_include
+            nSlices = len(slice_num_array)
         else:
+            nSlices = img.shape[-1]
             slice_num_array = np.arange(nSlices)
         start_slice = slice_num_array[0]
         frame_array = np.arange(0, ds.NominalInterval, ds.NominalInterval/nframes)
