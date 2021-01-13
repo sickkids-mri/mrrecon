@@ -3,7 +3,7 @@ thisdir = os.path.dirname(__file__)
 import numpy as np
 import ndflow as nf
 
-def write_to_dicom(data, img, outdir):
+def write_to_dicom(data, img, outdir, slices_to_include = None):
     import pydicom
     import numpy as np
     nv = img.shape[0]
@@ -65,7 +65,10 @@ def write_to_dicom(data, img, outdir):
         imPos_edge = (imPos - data['fovx'] / 2 * newR[:, 0] - data['fovy'] / 2 * newR[:, 1]
                      - data['fovz'] / 2 * (np.array([Sag_inc , Cor_inc , Tra_inc])))
 
-        slice_num_array = np.arange(nSlices)
+        if slices_to_include is not None:
+            slice_num_array = slices_to_include
+        else:
+            slice_num_array = np.arange(nSlices)
         frame_array = (0, ds.NominalInterval, ds.NominalInterval/nframes)
 
         for iframe in np.arange(nframes):
@@ -73,7 +76,7 @@ def write_to_dicom(data, img, outdir):
             ds.InstanceCreationTime = str(startTime + frame_array[iframe]/1000)
             ds.ContentTime = str(startTime + frame_array[iframe]/1000)
 
-            for islice in np.arange(1,nSlices,1):
+            for islice in slice_num_array:
                 imPos_slice = imPos_edge + slTh*islice*np.array([Sag_inc , Cor_inc , Tra_inc])
                 ds.SliceLocation = imPos_slice[1]
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
@@ -86,7 +89,7 @@ def write_to_dicom(data, img, outdir):
                     ds[(0x0051, 0x1016)].value = 'p2 M/RETRO/DIS2D'
 
                 if fe == 1:
-                    outfilename = outdir + '/I_Vx_ph' + str(iframe) + '_' + str(islice) + '.ima'
+                    outfilename = outdir + '/I_Vz_ph' + str(iframe) + '_' + str(islice) + '.ima'
                     ds.SeriesNumber = 2
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
@@ -98,7 +101,7 @@ def write_to_dicom(data, img, outdir):
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
                 if fe == 3:
-                    outfilename = outdir + '/I_Vz_ph' + str(iframe) + '_' + str(islice) + '.ima'
+                    outfilename = outdir + '/I_Vx_ph' + str(iframe) + '_' + str(islice) + '.ima'
                     ds.SeriesNumber = 4
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
