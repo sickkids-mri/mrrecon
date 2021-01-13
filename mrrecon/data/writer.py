@@ -70,6 +70,7 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
             slice_num_array = slices_to_include
         else:
             slice_num_array = np.arange(nSlices)
+        start_slice = slice_num_array[0]
         frame_array = np.arange(0, ds.NominalInterval, ds.NominalInterval/nframes)
 
         for iframe in np.arange(nframes):
@@ -84,19 +85,19 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
                 ds[(0x0019,0x1015)].value[:] = imPos_slice.tolist()
 
                 if fe == 0:
-                    outfilename = outdir + '/I_MAG_ph' + str(iframe) + '_' + str(islice) + '.ima'
+                    outfilename = outdir + '/I_MAG_ph' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
                     ds.SeriesNumber = 1
                     ds.ImageType = ['ORIGINAL', 'PRIMARY', 'M', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 M/RETRO/DIS2D'
 
                 if fe == 1:
-                    outfilename = outdir + '/I_Vz_ph' + str(iframe) + '_' + str(islice) + '.ima'
+                    outfilename = outdir + '/I_Vz_ph' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
                     ds.SeriesNumber = 2
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
                 if fe == 2:
-                    outfilename = outdir + '/I_Vy_ph' + str(iframe) + '_' + str(islice) + '.ima'
+                    outfilename = outdir + '/I_Vy_ph' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
                     ds.SeriesNumber = 3
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
