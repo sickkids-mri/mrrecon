@@ -106,7 +106,7 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
-                ds.PixelData = img[fe , iframe, : , : , islice]
+                ds.PixelData = np.ascontiguousarray(img[fe , iframe, : , : , islice])
                 tmpstr = SOPInstanceUID_str.rsplit('.', 1)[0]
                 tmpstr = tmpstr + str(counter)
                 ds.SOPInstanceUID = tmpstr  #need a different UID for each image
