@@ -108,7 +108,7 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
 
                 ds.PixelData = img[fe , iframe, : , : , islice]
                 tmpstr = SOPInstanceUID_str.rsplit('.', 1)[0]
-                tmpstr = tmpstr + counter
+                tmpstr = tmpstr + str(counter)
                 ds.SOPInstanceUID = tmpstr  #need a different UID for each image
                 ds.save_as(outfilename)
 
