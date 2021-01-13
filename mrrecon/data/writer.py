@@ -30,8 +30,9 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
 
         SOPInstanceUID_str = ds.SOPInstanceUID
         startTime = 0
-        timeres = 0.1 #dummy value for now. TODO: change to RR_avg/nframes
-        ds.NominalInterval = nframes * timeres * 1000 #TODO: change to RR_avg
+        #timeres = 0.1 #dummy value for now. TODO: change to RR_avg/nframes
+        #ds.NominalInterval = nframes * timeres * 1000 #TODO: change to RR_avg
+        ds.NominalInterval = data.get('rr_avg',1000)
         ds.CardiacNumberOfImages = nframes
         ds.Rows = img.shape[-3]
         ds.Columns = img.shape[-2]
@@ -69,7 +70,7 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
             slice_num_array = slices_to_include
         else:
             slice_num_array = np.arange(nSlices)
-        frame_array = (0, ds.NominalInterval, ds.NominalInterval/nframes)
+        frame_array = np.arange(0, ds.NominalInterval, ds.NominalInterval/nframes)
 
         for iframe in np.arange(nframes):
             ds.TriggerTime = frame_array[iframe]
