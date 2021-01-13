@@ -59,7 +59,8 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
 
         R = nf.traj.rot_from_quat(data['rot_quat'])
         newR = np.matmul(R , np.array([[1,0],[0,1],[0,0]])) #take only first two columns
-        ds.ImageOrientationPatient[:] = np.ravel(np.transpose(newR)).tolist()
+        #ds.ImageOrientationPatient[:] = np.ravel(np.transpose(newR)).tolist()
+        ds.ImageOrientationPatient[:] = np.ravel(newR).tolist()
 
         imPos = data['slice_pos']
         imPos_edge = (imPos - data['fovx'] / 2 * newR[:, 0] - data['fovy'] / 2 * newR[:, 1]
