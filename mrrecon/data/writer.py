@@ -46,21 +46,26 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
         ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
         ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
 
+        ds['RepetitionTime'] = 4*data['tr']
+        ds['EchoTime'] = data['te']
+        
         tmp = data['slice_normal']
         tmpstr = list(data['slice_normal'])[0][1::]
         ds[(0x0051, 0x100e)].value = tmpstr
         Sag_inc, Tra_inc, Cor_inc = 0, 0, 0
-        if 'Tra' in tmpstr:
-            Tra_inc = tmp['dTra']
-        elif 'Sag' in tmpstr:
-            Sag_inc = tmp['dSag']
-        elif 'Cor' in tmpstr:
-            Cor_inc = tmp['dCor']
 
         R = nf.traj.rot_from_quat(data['rot_quat'])
-        newR = np.matmul(R , np.array([[1,0],[0,1],[0,0]])) #take only first two columns
-        #ds.ImageOrientationPatient[:] = np.ravel(np.transpose(newR)).tolist()
-        ds.ImageOrientationPatient[:] = np.ravel(newR).tolist()
+        newR = np.matmul(R, np.array([[1, 0], [0, 1], [0, 0]]))  # take only first two columns
+
+        if 'Tra' in tmpstr:
+            Tra_inc = tmp['dTra']
+            ds.ImageOrientationPatient[:] = [1, 0, 0, 0, 1, 0]
+        elif 'Sag' in tmpstr:
+            Sag_inc = tmp['dSag']
+            ds.ImageOrientationPatient[:] = [0, 1, 0, 0, 0, 1]
+        elif 'Cor' in tmpstr:
+            Cor_inc = tmp['dCor']
+            ds.ImageOrientationPatient[:] = [1, 0, 0, 0, 0, 1]
 
         imPos = data['slice_pos']
         imPos_edge = (imPos - data['fovx'] / 2 * newR[:, 0] - data['fovy'] / 2 * newR[:, 1]
