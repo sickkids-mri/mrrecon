@@ -46,9 +46,10 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
         ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
         ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
 
-        ds['RepetitionTime'].value = 4*data['tr']
+        ds['RepetitionTime'].value = data['tr']
         ds['EchoTime'].value = data['te']
-        
+        ds['FlipAngle'].value = data['flipangle']
+
         tmp = data['slice_normal']
         tmpstr = list(data['slice_normal'])[0][1::]
         ds[(0x0051, 0x100e)].value = tmpstr
