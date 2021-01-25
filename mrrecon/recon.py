@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 import sigpy as sp
@@ -115,7 +117,8 @@ def detect_steady_state(signal):
         if not (x_inds.size == 0):
             ind = np.max(x_inds)
         else:
-            raise RuntimeError('Steady state signal fitting failed.')
+            warnings.warn('Steady state signal fitting failed.')
+            ind = 0
 
     else:
         # Entire signal is at steady state
