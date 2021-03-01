@@ -103,9 +103,6 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
 
             for islice in slice_num_array:
                 imPos_slice = imPos_edge + slTh*islice*np.array([Sag_inc , Cor_inc , Tra_inc])
-                print(fe)
-                print(islice)
-                print(imPos_slice)
                 ds.SliceLocation = imPos_slice[1]
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
                 ds[(0x0019,0x1015)].value[:] = imPos_slice.tolist()
@@ -139,12 +136,8 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
                 tmpslice = img[fe, iframe, :, :, islice]
-                ds.PixelData = tmpslice.tobytes()
-                # tmpstr = SOPInstanceUID_str.rsplit('.', 1)[0]
-                # tmpstr = tmpstr + '.' + str(counter)
-                #ds.SOPInstanceUID = tmpstr  #need a different UID for each image
+                ds.PixelData = tmpslice.tobytes()   
                 ds.SOPInstanceUID = uuid.uuid4().hex #generate unique UID
-                print(tmpstr)
                 ds.save_as(outfilename)
 
                 counter += 1
