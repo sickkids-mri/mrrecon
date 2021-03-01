@@ -57,7 +57,9 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
         ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
         ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
 
-        ds['PatientName'].value = data['PatientName']
+        patient_name = data.get('PatientName',None)
+        if patient_name is not None:
+            ds['PatientName'].value = patient_name
         ds['RepetitionTime'].value = data['tr']
         ds['EchoTime'].value = data['te']
         ds['FlipAngle'].value = data.get('flipangle',10)
@@ -80,8 +82,8 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
             Cor_inc = tmp['dCor']
             ds.ImageOrientationPatient[:] = [1, 0, 0, 0, 0, 1]
 
-        #imPos = data['slice_pos']
-        imPos = np.array([0,0,0])
+        imPos = np.array(data['slice_pos'].tolist())
+
         imPos_edge = (imPos - data['fovx'] / 2 * newR[:, 0] - data['fovy'] / 2 * newR[:, 1]
                      - data['fovz'] / 2 * (np.array([Sag_inc , Cor_inc , Tra_inc])))
 
@@ -109,28 +111,44 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
                 ds[(0x0019,0x1015)].value[:] = imPos_slice.tolist()
 
                 if fe == 0:
+<<<<<<< HEAD
                     outfilename = outdir + '/I_MAG_ph/' + 'im' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
+=======
+                    outfilename = outdir + '/I_MAG_ph' + str(iframe) + '_' + str(islice - start_slice) + '.IMA'
+>>>>>>> 0e99e7e03f2ea2634b93579f4f1927761c2c7c96
                     ds.SeriesNumber = 1
                     ds.ImageType = ['ORIGINAL', 'PRIMARY', 'M', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 M/RETRO/DIS2D'
 
                 if fe == 1:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'in'
+<<<<<<< HEAD
                     outfilename = outdir + '/I_Vz_ph/' + 'im' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
+=======
+                    outfilename = outdir + '/I_Vz_ph' + str(iframe) + '_' + str(islice - start_slice) + '.IMA'
+>>>>>>> 0e99e7e03f2ea2634b93579f4f1927761c2c7c96
                     ds.SeriesNumber = 4
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
                 if fe == 3:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'ap'
+<<<<<<< HEAD
                     outfilename = outdir + '/I_Vy_ph/' + 'im' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
+=======
+                    outfilename = outdir + '/I_Vy_ph' + str(iframe) + '_' + str(islice - start_slice) + '.IMA'
+>>>>>>> 0e99e7e03f2ea2634b93579f4f1927761c2c7c96
                     ds.SeriesNumber = 3
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
                 if fe == 2:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'rl'
+<<<<<<< HEAD
                     outfilename = outdir + '/I_Vx_ph/' + 'im' + str(iframe) + '_' + str(islice) + '.ima'
+=======
+                    outfilename = outdir + '/I_Vx_ph' + str(iframe) + '_' + str(islice) + '.IMA'
+>>>>>>> 0e99e7e03f2ea2634b93579f4f1927761c2c7c96
                     ds.SeriesNumber = 2
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
