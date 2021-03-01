@@ -176,6 +176,7 @@ class DataLoader:
         self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
 
         self.data['weight'] = dicom['flUsedPatientWeight']
+    
 
         # Convert from nanoseconds to microseconds
         self.data['dwelltime'] = float(hdr['MeasYaps']['sRXSPEC']['alDwellTime'][0]) / 1000  # noqa

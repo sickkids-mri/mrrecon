@@ -13,7 +13,20 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
     else:
         nframes = img.shape[1]
 
-    img_norm = normalize_pc(img)
+    #img_norm = normalize_pc(img)
+
+    subdir_mag = outdir + '/I_MAG_ph'
+    subdir_vx = outdir + '/I_Vx_ph'
+    subdir_vy = outdir + '/I_Vy_ph'
+    subdir_vz = outdir + '/I_Vz_ph'
+    
+    subdirs = [subdir_mag, subdir_vx, subdir_vy, subdir_vz]
+    
+    import shutil
+    for dirstr in subdirs:
+        if os.path.exists(dirstr):
+            shutil.rmtree(dirstr)
+        os.mkdir(dirstr)
 
     counter = 0
     # read in dummy dicom files for each flow encode
@@ -29,8 +42,6 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
 
         SOPInstanceUID_str = ds.SOPInstanceUID
         startTime = 0
-        #timeres = 0.1 #dummy value for now. TODO: change to RR_avg/nframes
-        #ds.NominalInterval = nframes * timeres * 1000 #TODO: change to RR_avg
         ds.NominalInterval = data.get('rr_avg',1000)
         ds.CardiacNumberOfImages = nframes
         ds.Rows = img.shape[-3]
@@ -49,7 +60,7 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
         ds['PatientName'].value = data['PatientName']
         ds['RepetitionTime'].value = data['tr']
         ds['EchoTime'].value = data['te']
-        ds['FlipAngle'].value = data['flipangle']
+        ds['FlipAngle'].value = data.get('flipangle',10)
 
         tmp = data['slice_normal']
         tmpstr = list(data['slice_normal'])[0][1::]
@@ -69,7 +80,8 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
             Cor_inc = tmp['dCor']
             ds.ImageOrientationPatient[:] = [1, 0, 0, 0, 0, 1]
 
-        imPos = data['slice_pos']
+        #imPos = data['slice_pos']
+        imPos = np.array([0,0,0])
         imPos_edge = (imPos - data['fovx'] / 2 * newR[:, 0] - data['fovy'] / 2 * newR[:, 1]
                      - data['fovz'] / 2 * (np.array([Sag_inc , Cor_inc , Tra_inc])))
 
@@ -89,43 +101,46 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
 
             for islice in slice_num_array:
                 imPos_slice = imPos_edge + slTh*islice*np.array([Sag_inc , Cor_inc , Tra_inc])
+                print(fe)
+                print(islice)
+                print(imPos_slice)
                 ds.SliceLocation = imPos_slice[1]
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
                 ds[(0x0019,0x1015)].value[:] = imPos_slice.tolist()
 
                 if fe == 0:
-                    outfilename = outdir + '/I_MAG_ph' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
+                    outfilename = outdir + '/I_MAG_ph/' + 'im' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
                     ds.SeriesNumber = 1
                     ds.ImageType = ['ORIGINAL', 'PRIMARY', 'M', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 M/RETRO/DIS2D'
 
                 if fe == 1:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'in'
-                    outfilename = outdir + '/I_Vz_ph' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
+                    outfilename = outdir + '/I_Vz_ph/' + 'im' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
                     ds.SeriesNumber = 4
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
                 if fe == 3:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'ap'
-                    outfilename = outdir + '/I_Vy_ph' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
+                    outfilename = outdir + '/I_Vy_ph/' + 'im' + str(iframe) + '_' + str(islice - start_slice) + '.ima'
                     ds.SeriesNumber = 3
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
                 if fe == 2:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'rl'
-                    outfilename = outdir + '/I_Vx_ph' + str(iframe) + '_' + str(islice) + '.ima'
+                    outfilename = outdir + '/I_Vx_ph/' + 'im' + str(iframe) + '_' + str(islice) + '.ima'
                     ds.SeriesNumber = 2
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
                 tmpslice = img[fe, iframe, :, :, islice]
                 ds.PixelData = tmpslice.tobytes()
-                #ds.PixelData = np.ascontiguousarray(img[fe , iframe, : , : , islice])
                 tmpstr = SOPInstanceUID_str.rsplit('.', 1)[0]
-                tmpstr = tmpstr + str(counter)
+                tmpstr = tmpstr + '.' + str(counter)
                 ds.SOPInstanceUID = tmpstr  #need a different UID for each image
+                print(tmpstr)
                 ds.save_as(outfilename)
 
                 counter += 1
