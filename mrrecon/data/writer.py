@@ -57,9 +57,20 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
         ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
         ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
 
+        ds.ManufacturerModelName = data['systemmodel']
+        ds.AcquisitionDate = data['acquisition_date']
+        ds.SeriesDate = data['acquisition_date']
+        ds.StudyDate = data['acquisition_date']
+        ds.ContentDate = data['acquisition_date']
+        ds.SeriesTime = data['acquisition_time']
+        ds.StudyTime = data['acquisition_time']
+        ds.StudyInstanceUID = data['StudyLOID']
+        ds.SeriesInstanceUID = data['SeriesLOID']
         patient_name = data.get('PatientName',None)
         if patient_name is not None:
             ds['PatientName'].value = patient_name
+        ds['PatientID'].value = data['PatientLOID']
+
         ds['RepetitionTime'].value = data['tr']
         ds['EchoTime'].value = data['te']
         ds['FlipAngle'].value = data.get('flipangle',10)
