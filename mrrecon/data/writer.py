@@ -46,8 +46,6 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
         ds.CardiacNumberOfImages = nframes
         ds.Rows = img.shape[-3]
         ds.Columns = img.shape[-2]
-        ds.Width = img.shape[-3]
-        ds.Height = img.shape[-2]
         ds.PixelSpacing = [data['dx'], data['dy']]
         ds.PercentSampling = 100
         ds.PercentPhaseFieldOfView = img.shape[-2] / img.shape[-3] * 100 #assuming square voxels here
@@ -55,8 +53,12 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
         ds.NumberOfPhaseEncodingSteps = img.shape[-2]
         ds.AcquisitionMatrix = [0, img.shape[-3], img.shape[-2], img.shape[-1]]
         ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
-        ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
-
+        #ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
+        fovx = data['dx']*img.shape[-3]
+        fovy = data['dy']*img.shape[-2]
+        fovz = data['dz']*img.shape[-1]
+        ds[(0x0051, 0x100c)].value = 'FoV ' + str(fovx) + '*' + str(fovy)
+        
         ds.ManufacturerModelName = data['systemmodel']
         ds.AcquisitionDate = data['acquisition_date']
         ds.SeriesDate = data['acquisition_date']
@@ -95,8 +97,8 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
 
         imPos = np.array(data['slice_pos'].tolist())
 
-        imPos_edge = (imPos - data['fovx'] / 2 * newR[:, 0] - data['fovy'] / 2 * newR[:, 1]
-                     - data['fovz'] / 2 * (np.array([Sag_inc , Cor_inc , Tra_inc])))
+        imPos_edge = (imPos - fovx / 2 * newR[:, 0] - fovy / 2 * newR[:, 1]
+                     - fovz / 2 * (np.array([Sag_inc , Cor_inc , Tra_inc])))
 
         if slices_to_include is not None:
             slice_num_array = slices_to_include
@@ -114,8 +116,12 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
 
             for islice in slice_num_array:
                 imPos_slice = imPos_edge + slTh*islice*np.array([Sag_inc , Cor_inc , Tra_inc])
-                ds.SliceLocation = imPos_slice[1]
+                ds.SliceLocation = imPos_slice[-1]
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
+                print(fe)
+                print(iframe)
+                print(islice)
+                print(ds.ImagePositionPatient)
                 ds[(0x0019,0x1015)].value[:] = imPos_slice.tolist()
 
                 if fe == 0:
