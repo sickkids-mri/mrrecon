@@ -66,8 +66,8 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
         ds.ContentDate = data['acquisition_date']
         ds.SeriesTime = data['acquisition_time']
         ds.StudyTime = data['acquisition_time']
-        ds.StudyInstanceUID = data['StudyLOID']
-        ds.SeriesInstanceUID = data['SeriesLOID']
+        # ds.StudyInstanceUID = data['StudyLOID']
+        # ds.SeriesInstanceUID = data['SeriesLOID']
         patient_name = data.get('PatientName',None)
         if patient_name is not None:
             ds['PatientName'].value = patient_name
@@ -118,10 +118,6 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
                 imPos_slice = imPos_edge + slTh*islice*np.array([Sag_inc , Cor_inc , Tra_inc])
                 ds.SliceLocation = imPos_slice[-1]
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
-                print(fe)
-                print(iframe)
-                print(islice)
-                print(ds.ImagePositionPatient)
                 ds[(0x0019,0x1015)].value[:] = imPos_slice.tolist()
 
                 if fe == 0:
