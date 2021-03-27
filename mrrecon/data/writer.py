@@ -55,7 +55,6 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
     thisdir = os.path.dirname(__file__)
 
     slTh = data['dz']
-    nframes = nt
 
     # img_norm = normalize_pc(img)
 
@@ -74,7 +73,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
 
     counter = 0
     # read in dummy dicom files for each flow encode
-    for fe in np.arange(nv):
+    for fe in range(nv):
         if fe == 0:
             ds = pydicom.dcmread(os.path.join(thisdir, 'DummyDicoms/1.IMA'))
         elif fe == 1:
@@ -86,7 +85,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
 
         startTime = 0
         ds.NominalInterval = data.get('rr_avg',1000)
-        ds.CardiacNumberOfImages = nframes
+        ds.CardiacNumberOfImages = nt
         ds.Rows = img.shape[-3]
         ds.Columns = img.shape[-2]
         ds.PixelSpacing = [data['dx'], data['dy']]
@@ -150,9 +149,9 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
             nSlices = img.shape[-1]
             slice_num_array = np.arange(nSlices)
         start_slice = slice_num_array[0]
-        frame_array = np.arange(0, ds.NominalInterval, ds.NominalInterval/nframes)
+        frame_array = np.arange(0, ds.NominalInterval, ds.NominalInterval / nt)
 
-        for iframe in np.arange(nframes):
+        for iframe in range(nt):
             ds.TriggerTime = frame_array[iframe]
             ds.InstanceCreationTime = str(startTime + frame_array[iframe]/1000)
             ds.ContentTime = str(startTime + frame_array[iframe]/1000)
