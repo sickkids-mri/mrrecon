@@ -67,7 +67,6 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
             shutil.rmtree(subdir)
         os.mkdir(subdir)
 
-    counter = 0
     # read in dummy dicom files for each flow encode
     for fe in range(nv):
         if fe == 0:
@@ -191,6 +190,4 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
                 ds.SOPInstanceUID = uuid.uuid4().hex #generate unique UID
                 ds.save_as(outfilename)
 
-                counter += 1
-
-    return(counter)
+    return
