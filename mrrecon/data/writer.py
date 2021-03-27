@@ -54,10 +54,6 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
 
     thisdir = os.path.dirname(__file__)
 
-    slTh = data['dz']
-
-    # img_norm = normalize_pc(img)
-
     subdir_mag = outdir + '/I_MAG_ph'
     subdir_vx = outdir + '/I_Vx_ph'
     subdir_vy = outdir + '/I_Vy_ph'
@@ -157,7 +153,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
             ds.ContentTime = str(startTime + frame_array[iframe]/1000)
 
             for islice in slice_num_array:
-                imPos_slice = imPos_edge + slTh*islice*np.array([Sag_inc , Cor_inc , Tra_inc])
+                imPos_slice = imPos_edge + data['dz'] * islice * np.array([Sag_inc , Cor_inc , Tra_inc])
                 ds.SliceLocation = imPos_slice[-1]
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
                 ds[(0x0019,0x1015)].value[:] = imPos_slice.tolist()
