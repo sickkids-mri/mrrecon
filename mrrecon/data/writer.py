@@ -35,13 +35,27 @@ def normalize_pc(img, new_max=4096):
 
 
 def write_to_dicom(data, img, outdir, slices_to_include=None):
+    """Writes 4D flow dicoms.
+
+    Dicoms work for the 4D flow module in cvi42.
+
+    Args:
+        img (array): Array with shape (nv, nt, nz, ny, nx). `nv` must have a
+            value of 4. `img[0]` should be the magnitude image, `img[1]` should
+            be the z velocity image, `img[2]` should be the x velocity image,
+            and `img[3]` should be the y velocity image.
+        data (dict): Output dictionary from the reconstruction pipeline.
+        outdir
+        slices_to_include
+    """
+    assert img.ndim == 5, f'5D array required. Got {img.ndim}D array instead.'
+    nv, nt, nz, ny, nx = img.shape
+    assert nv == 4, f'4 image series required. Got {nv} instead.'
+
     thisdir = os.path.dirname(__file__)
-    nv = img.shape[0]
+
     slTh = data['dz']
-    if len(img.shape) < 5:
-        nframes = 1
-    else:
-        nframes = img.shape[1]
+    nframes = nt
 
     # img_norm = normalize_pc(img)
 
