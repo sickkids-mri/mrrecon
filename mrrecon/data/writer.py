@@ -1,4 +1,5 @@
 import os
+import shutil
 import uuid
 
 import numpy as np
@@ -61,11 +62,10 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
 
     subdirs = [subdir_mag, subdir_vx, subdir_vy, subdir_vz]
 
-    import shutil
-    for dirstr in subdirs:
-        if os.path.exists(dirstr):
-            shutil.rmtree(dirstr)
-        os.mkdir(dirstr)
+    for subdir in subdirs:
+        if os.path.exists(subdir):
+            shutil.rmtree(subdir)
+        os.mkdir(subdir)
 
     counter = 0
     # read in dummy dicom files for each flow encode
