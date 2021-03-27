@@ -176,23 +176,9 @@ class DataLoader:
         self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
 
         self.data['weight'] = dicom['flUsedPatientWeight']
-    
 
         # Convert from nanoseconds to microseconds
         self.data['dwelltime'] = float(hdr['MeasYaps']['sRXSPEC']['alDwellTime'][0]) / 1000  # noqa
-
-        # These fields are necessary for dicom writing...
-        self.data['vendor'] = dicom['Manufacturer']
-        self.data['systemmodel'] = dicom['ManufacturersModelName']
-        tmpstr = config['ExamMemoryUID']
-        self.data['acquisition_date'] = tmpstr.split('_')[3]
-        self.data['acquisition_time'] = tmpstr.split('_')[4]
-        self.data['StudyLOID'] = config['StudyLOID']
-        self.data['SeriesLOID'] = config['SeriesLOID']
-        self.data['PatientLOID'] = config['PatientLOID']
-
-        self.data['vendor'] = dicom['Manufacturer']
-        self.data['systemmodel'] = dicom['ManufacturersModelName']
 
         # Field strength
         self.data['field_strength'] = dicom['flMagneticFieldStrength']
@@ -238,8 +224,18 @@ class DataLoader:
 
         self.data['readout_os_factor'] = config['ReadoutOversamplingFactor']
         self.data['seq_filename'] = config['SequenceFileName']
+
+        # For dicom writing
+        self.data['vendor'] = dicom['Manufacturer']
+        self.data['systemmodel'] = dicom['ManufacturersModelName']
+        tmpstr = config['ExamMemoryUID']
+        self.data['acquisition_date'] = tmpstr.split('_')[3]
+        self.data['acquisition_time'] = tmpstr.split('_')[4]
+        self.data['StudyLOID'] = config['StudyLOID']
+        self.data['SeriesLOID'] = config['SeriesLOID']
+        self.data['PatientLOID'] = config['PatientLOID']
         self.data['protocol_name'] = hdr['MeasYaps']['tProtocolName']
-        self.data['slice_normal'] = hdr['MeasYaps']['sSliceArray']['asSlice'][0]['sNormal']
+        self.data['slice_normal'] = hdr['MeasYaps']['sSliceArray']['asSlice'][0]['sNormal']  # noqa
 
         # Flow encoding navigators collection flag
         try:
