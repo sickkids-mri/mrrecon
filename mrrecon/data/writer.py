@@ -1,12 +1,41 @@
 import os
-thisdir = os.path.dirname(__file__)
-import numpy as np
-import ndflow as nf
 import uuid
 
-def write_to_dicom(data, img, outdir, slices_to_include = None):
-    import pydicom
-    import numpy as np
+import numpy as np
+
+import pydicom
+
+import ndflow as nf
+
+
+def normalize_pc(img, new_max=4096):
+    """Normalizes and casts phase contrast image to uint16 for dicom writing.
+
+    Args:
+        img (float array): Phase contrast image with phase difference already
+            calculated. `img[0]` should be the magnitude image, `img[1]` should
+            be the first phase image, `img[2]` should be the second phase
+            image, etc.
+        new_max (int): Desired max of uint16 images.
+
+    Returns:
+        out (uint16 array): Normalized image with the same shape as the input.
+    """
+    nv = img.shape[0]
+    out = np.empty_like(img, dtype=np.uint16)
+
+    # Normalize magnitude image
+    out[0] = img[0] / img[0].max() * new_max
+
+    # Normalize phase image(s)
+    for v in range(1, nv):
+        out[v] = (img[v] / np.pi + 1) * (new_max / 2)
+
+    return out
+
+
+def write_to_dicom(data, img, outdir, slices_to_include=None):
+    thisdir = os.path.dirname(__file__)
     nv = img.shape[0]
     slTh = data['dz']
     if len(img.shape) < 5:
@@ -14,15 +43,15 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
     else:
         nframes = img.shape[1]
 
-    #img_norm = normalize_pc(img)
+    # img_norm = normalize_pc(img)
 
     subdir_mag = outdir + '/I_MAG_ph'
     subdir_vx = outdir + '/I_Vx_ph'
     subdir_vy = outdir + '/I_Vy_ph'
     subdir_vz = outdir + '/I_Vz_ph'
-    
+
     subdirs = [subdir_mag, subdir_vx, subdir_vy, subdir_vz]
-    
+
     import shutil
     for dirstr in subdirs:
         if os.path.exists(dirstr):
@@ -58,7 +87,7 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
         fovy = data['dy']*img.shape[-2]
         fovz = data['dz']*img.shape[-1]
         ds[(0x0051, 0x100c)].value = 'FoV ' + str(fovx) + '*' + str(fovy)
-        
+
         ds.ManufacturerModelName = data['systemmodel']
         ds.AcquisitionDate = data['acquisition_date']
         ds.SeriesDate = data['acquisition_date']
@@ -155,31 +184,4 @@ def write_to_dicom(data, img, outdir, slices_to_include = None):
 
                 counter += 1
 
-
     return(counter)
-
-def normalize_pc(img, new_max=4096):
-    """Normalizes and casts phase contrast image to uint16 for dicom writing.
-
-    Args:
-        img (float array): Phase contrast image with phase difference already
-            calculated. `img[0]` should be the magnitude image, `img[1]` should
-            be the first phase image, `img[2]` should be the second phase
-            image, etc.
-        new_max (int): Desired max of uint16 images.
-
-    Returns:
-        out (uint16 array): Normalized image with the same shape as the input.
-    """
-    nv = img.shape[0]
-    out = np.empty_like(img, dtype=np.uint16)
-
-    # Normalize magnitude image
-    out[0] = img[0] / img[0].max() * new_max
-
-    # Normalize phase image(s)
-    for v in range(1, nv):
-        out[v] = (img[v] / np.pi + 1) * (new_max / 2)
-
-    return out
-
