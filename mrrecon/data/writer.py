@@ -89,6 +89,15 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
     nv, nt, nz, ny, nx = img.shape
     assert nv == 4, f'4 image series required. Got {nv} instead.'
 
+    # Transform image. TODO: Not sure if these belong here, or if they are
+    # dependent on another parameter.
+    # Transpose (nv, nt, nz, ny, nx) to (nv, nt, nz, nx, ny)
+    img = np.transpose(img, (0, 1, 2, 4, 3))
+    img = np.flip(img, axis=2)  # Flip superior-inferior axis
+    # Redefine x and y. Let x correspond to left-right direction, and y
+    # correspond to anterior-posterior direction
+    nv, nt, nz, ny, nx = img.shape
+
     thisdir = os.path.dirname(__file__)
 
     subdir_mag = outdir + '/I_MAG_ph'
@@ -118,19 +127,19 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
         startTime = 0
         ds.NominalInterval = int(round(data['rr_avg']))
         ds.CardiacNumberOfImages = nt
-        ds.Rows = img.shape[-3]
-        ds.Columns = img.shape[-2]
+        ds.Rows = ny
+        ds.Columns = nx
         ds.PixelSpacing = [data['dx'], data['dy']]
         ds.PercentSampling = 100
-        ds.PercentPhaseFieldOfView = img.shape[-2] / img.shape[-3] * 100 #assuming square voxels here
+        ds.PercentPhaseFieldOfView = nx / ny * 100 #assuming square voxels here
         ds.SliceThickness = data['dz']
-        ds.NumberOfPhaseEncodingSteps = img.shape[-2]
-        ds.AcquisitionMatrix = [0, img.shape[-3], img.shape[-2], img.shape[-1]]
-        ds[(0x0051, 0x100b)].value = str(img.shape[-3]) + '*' + str(img.shape[-2]) + 's'
+        ds.NumberOfPhaseEncodingSteps = nx
+        ds.AcquisitionMatrix = [0, ny, nx, nz]
+        ds[(0x0051, 0x100b)].value = str(ny) + '*' + str(nx) + 's'
         #ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
-        fovx = data['dx']*img.shape[-3]
-        fovy = data['dy']*img.shape[-2]
-        fovz = data['dz']*img.shape[-1]
+        fovx = data['dx']*ny
+        fovy = data['dy']*nx
+        fovz = data['dz']*nz
         ds[(0x0051, 0x100c)].value = 'FoV ' + str(fovx) + '*' + str(fovy)
 
         ds.ManufacturerModelName = data['systemmodel']
@@ -178,7 +187,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
             slice_num_array = slices_to_include
             nSlices = len(slice_num_array)
         else:
-            nSlices = img.shape[-1]
+            nSlices = nz
             slice_num_array = np.arange(nSlices)
         start_slice = slice_num_array[0]
         frame_array = np.arange(0, ds.NominalInterval, ds.NominalInterval / nt)
@@ -222,7 +231,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
-                tmpslice = img[v, iframe, :, :, islice]
+                tmpslice = img[v, iframe, islice, :, :]
                 ds.PixelData = tmpslice.tobytes()
                 ds.SOPInstanceUID = uuid.uuid4().hex  # Generate unique UID
                 ds.save_as(outfilename)
