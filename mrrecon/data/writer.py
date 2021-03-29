@@ -116,7 +116,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
             ds = pydicom.dcmread(os.path.join(thisdir, 'DummyDicoms/4.IMA'))
 
         startTime = 0
-        ds.NominalInterval = data.get('rr_avg',1000)
+        ds.NominalInterval = int(round(data['rr_avg']))
         ds.CardiacNumberOfImages = nt
         ds.Rows = img.shape[-3]
         ds.Columns = img.shape[-2]
