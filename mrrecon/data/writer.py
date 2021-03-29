@@ -100,6 +100,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
     # Since x and y were swapped, also swap pixel spacings
     dx = data['dy']  # Column spacing
     dy = data['dx']  # Row spacing
+    dz = data['dz']  # Slice spacing
 
     thisdir = os.path.dirname(__file__)
 
@@ -135,14 +136,14 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
         ds.PixelSpacing = [dy, dx]
         ds.PercentSampling = 100
         ds.PercentPhaseFieldOfView = nx / ny * 100 #assuming square voxels here
-        ds.SliceThickness = data['dz']
+        ds.SliceThickness = dz
         ds.NumberOfPhaseEncodingSteps = nx
         ds.AcquisitionMatrix = [0, ny, nx, nz]
         ds[(0x0051, 0x100b)].value = str(ny) + '*' + str(nx) + 's'
         #ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
         fovx = dy * ny
         fovy = dx * nx
-        fovz = data['dz']*nz
+        fovz = dz * nz
         ds[(0x0051, 0x100c)].value = 'FoV ' + str(fovx) + '*' + str(fovy)
 
         ds.ManufacturerModelName = data['systemmodel']
@@ -201,7 +202,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
             ds.ContentTime = str(startTime + frame_array[iframe]/1000)
 
             for islice in slice_num_array:
-                imPos_slice = imPos_edge + data['dz'] * islice * np.array([Sag_inc , Cor_inc , Tra_inc])
+                imPos_slice = imPos_edge + dz * islice * np.array([Sag_inc , Cor_inc , Tra_inc])
                 ds.SliceLocation = imPos_slice[-1]
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
                 ds[(0x0019, 0x1015)].value[:] = imPos_slice.tolist()
