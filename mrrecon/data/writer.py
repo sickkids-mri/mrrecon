@@ -35,6 +35,42 @@ def normalize_pc(img, new_max=4096):
     return out
 
 
+def _fix_matfile_format(d):
+    """Fixes the formatting of loaded matfiles.
+
+    Only meant to work for 4D flow matfiles.
+
+    Everything in matfiles get turned into arrays. This function tries to take
+    things out of arrays when appropriate.
+    """
+    d['dx'] = d['dx'].item()
+    d['dy'] = d['dy'].item()
+    d['dz'] = d['dz'].item()
+    d['fovx'] = d['fovx'].item()
+    d['fovy'] = d['fovy'].item()
+    d['fovz'] = d['fovz'].item()
+    d['rr_avg'] = d['rr_avg'].item()
+    d['systemmodel'] = str(d['systemmodel'][0])
+    d['acquisition_date'] = str(d['acquisition_date'][0])
+    d['acquisition_time'] = str(d['acquisition_time'][0])
+    d['PatientLOID'] = str(d['PatientLOID'][0])
+    d['tr'] = d['tr'].item()
+    d['te'] = d['te'].item()
+    d['flipangle'] = d['flipangle'].item()
+
+    k = d['slice_normal'][0][0].dtype.names[0]
+    d['slice_normal'] = {k: d['slice_normal'][0][0][k].item()}
+
+    d['slice_pos'] = np.array([d['slice_pos']['flSag'].item().item(),
+                               d['slice_pos']['flCor'].item().item(),
+                               d['slice_pos']['flTra'].item().item()])
+
+    d['rot_quat'] = d['rot_quat'][0]
+
+    d['venc'] = d['venc'].item()
+    return d
+
+
 def write_to_dicom(data, img, outdir, slices_to_include=None):
     """Writes 4D flow dicoms.
 
