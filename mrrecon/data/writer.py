@@ -97,6 +97,9 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
     # Redefine x and y. Let x correspond to left-right direction, and y
     # correspond to anterior-posterior direction
     nv, nt, nz, ny, nx = img.shape
+    # Since x and y were swapped, also swap pixel spacings
+    dx = data['dy']  # Column spacing
+    dy = data['dx']  # Row spacing
 
     thisdir = os.path.dirname(__file__)
 
@@ -129,7 +132,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
         ds.CardiacNumberOfImages = nt
         ds.Rows = ny
         ds.Columns = nx
-        ds.PixelSpacing = [data['dx'], data['dy']]
+        ds.PixelSpacing = [dy, dx]
         ds.PercentSampling = 100
         ds.PercentPhaseFieldOfView = nx / ny * 100 #assuming square voxels here
         ds.SliceThickness = data['dz']
@@ -137,8 +140,8 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
         ds.AcquisitionMatrix = [0, ny, nx, nz]
         ds[(0x0051, 0x100b)].value = str(ny) + '*' + str(nx) + 's'
         #ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
-        fovx = data['dx']*ny
-        fovy = data['dy']*nx
+        fovx = dy * ny
+        fovy = dx * nx
         fovz = data['dz']*nz
         ds[(0x0051, 0x100c)].value = 'FoV ' + str(fovx) + '*' + str(fovy)
 
