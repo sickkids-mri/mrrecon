@@ -155,14 +155,14 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
         ds.StudyTime = data['acquisition_time']
         # ds.StudyInstanceUID = data['StudyLOID']
         # ds.SeriesInstanceUID = data['SeriesLOID']
-        patient_name = data.get('PatientName',None)
+        patient_name = data.get('PatientName', None)
         if patient_name is not None:
             ds['PatientName'].value = patient_name
         ds['PatientID'].value = data['PatientLOID']
 
         ds['RepetitionTime'].value = data['tr']
         ds['EchoTime'].value = data['te']
-        ds['FlipAngle'].value = data.get('flipangle',10)
+        ds['FlipAngle'].value = data['flipangle']
 
         tmp = data['slice_normal']
         tmpstr = list(data['slice_normal'])[0][1::]
