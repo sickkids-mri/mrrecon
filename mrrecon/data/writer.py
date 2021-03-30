@@ -170,7 +170,6 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
         Sag_inc, Tra_inc, Cor_inc = 0, 0, 0
 
         R = nf.traj.rot_from_quat(data['rot_quat'])
-        newR = np.matmul(R, np.array([[1, 0], [0, 1], [0, 0]]))  # take only first two columns
 
         if 'Tra' in tmpstr:
             Tra_inc = tmp['dTra']
@@ -184,8 +183,8 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
 
         imPos = np.array(data['slice_pos'].tolist())
 
-        imPos_edge = (imPos - fovy / 2 * newR[:, 0] - fovx / 2 * newR[:, 1]
-                     - fovz / 2 * (np.array([Sag_inc , Cor_inc , Tra_inc])))
+        imPos_edge = (imPos - fovy / 2 * R[:, 0] - fovx / 2 * R[:, 1]
+                      - fovz / 2 * (np.array([Sag_inc, Cor_inc, Tra_inc])))
 
         if slices_to_include is not None:
             slice_num_array = slices_to_include
@@ -202,7 +201,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
             ds.ContentTime = str(startTime + frame_array[iframe]/1000)
 
             for islice in slice_num_array:
-                imPos_slice = imPos_edge + dz * islice * np.array([Sag_inc , Cor_inc , Tra_inc])
+                imPos_slice = imPos_edge + dz * islice * np.array([Sag_inc, Cor_inc, Tra_inc])
                 ds.SliceLocation = imPos_slice[-1]
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
                 ds[(0x0019, 0x1015)].value[:] = imPos_slice.tolist()
