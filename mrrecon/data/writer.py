@@ -71,7 +71,7 @@ def _fix_matfile_format(d):
     return d
 
 
-def write_to_dicom(data, img, outdir, slices_to_include=None):
+def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
     """Writes 4D flow dicoms.
 
     Dicoms work for the 4D flow module in cvi42.
@@ -82,8 +82,9 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
             be the z velocity image, `img[2]` should be the x velocity image,
             and `img[3]` should be the y velocity image.
         data (dict): Output dictionary from the reconstruction pipeline.
-        outdir
-        slices_to_include
+        outdir (str): Folder where dicoms will be saved.
+        slices_to_include (array): 1D array of integers indicating which slices
+            should be written to dicoms.
     """
     assert img.ndim == 5, f'5D array required. Got {img.ndim}D array instead.'
     nv, nt, nz, ny, nx = img.shape
