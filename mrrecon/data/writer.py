@@ -187,13 +187,10 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
         imPos_edge = (imPos - fovy / 2 * R[:, 0] - fovx / 2 * R[:, 1]
                       - fovz / 2 * (np.array([Sag_inc, Cor_inc, Tra_inc])))
 
-        if slices_to_include is not None:
-            slice_num_array = slices_to_include
-            nSlices = len(slice_num_array)
-        else:
-            nSlices = nz
-            slice_num_array = np.arange(nSlices)
-        start_slice = slice_num_array[0]
+        if slices_to_include is None:
+            slices_to_include = np.arange(nz)
+
+        start_slice = slices_to_include[0]
         frame_array = np.arange(0, ds.NominalInterval, ds.NominalInterval / nt)
 
         for iframe in range(nt):
@@ -201,7 +198,7 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
             ds.InstanceCreationTime = str(startTime + frame_array[iframe]/1000)
             ds.ContentTime = str(startTime + frame_array[iframe]/1000)
 
-            for islice in slice_num_array:
+            for islice in slices_to_include:
                 imPos_slice = imPos_edge + dz * islice * np.array([Sag_inc, Cor_inc, Tra_inc])
                 ds.SliceLocation = imPos_slice[-1]
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
