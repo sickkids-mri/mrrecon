@@ -102,6 +102,10 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
     dy = data['dx']  # Row spacing
     dz = data['dz']  # Slice spacing
 
+    fovx = dx * nx
+    fovy = dy * ny
+    fovz = dz * nz
+
     thisdir = os.path.dirname(__file__)
 
     subdir_mag = outdir + '/I_MAG_ph'
@@ -140,11 +144,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
         ds.NumberOfPhaseEncodingSteps = nx
         ds.AcquisitionMatrix = [0, ny, nx, nz]
         ds[(0x0051, 0x100b)].value = str(ny) + '*' + str(nx) + 's'
-        #ds[(0x0051, 0x100c)].value = 'FoV ' + str(data['fovx']) + '*' + str(data['fovy'])
-        fovx = dy * ny
-        fovy = dx * nx
-        fovz = dz * nz
-        ds[(0x0051, 0x100c)].value = 'FoV ' + str(fovx) + '*' + str(fovy)
+        ds[(0x0051, 0x100c)].value = 'FoV ' + str(fovy) + '*' + str(fovx)
 
         ds.ManufacturerModelName = data['systemmodel']
         ds.AcquisitionDate = data['acquisition_date']
@@ -184,7 +184,7 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
 
         imPos = np.array(data['slice_pos'].tolist())
 
-        imPos_edge = (imPos - fovx / 2 * newR[:, 0] - fovy / 2 * newR[:, 1]
+        imPos_edge = (imPos - fovy / 2 * newR[:, 0] - fovx / 2 * newR[:, 1]
                      - fovz / 2 * (np.array([Sag_inc , Cor_inc , Tra_inc])))
 
         if slices_to_include is not None:
