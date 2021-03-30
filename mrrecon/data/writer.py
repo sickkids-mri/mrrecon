@@ -207,7 +207,6 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
                 ds[(0x0019, 0x1015)].value[:] = imPos_slice.tolist()
 
                 if v == 0:
-
                     outfilename = subdir_mag + '/im' + str(iframe) + '_' + str(islice - start_slice) + '.IMA'
                     ds.SeriesNumber = 1
                     ds.ImageType = ['ORIGINAL', 'PRIMARY', 'M', 'RETRO', 'DIS2D']
