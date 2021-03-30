@@ -164,21 +164,21 @@ def write_to_dicom(data, img, outdir, slices_to_include=None):
         ds['EchoTime'].value = data['te']
         ds['FlipAngle'].value = data['flipangle']
 
-        tmp = data['slice_normal']
-        tmpstr = list(data['slice_normal'])[0][1::]
-        ds[(0x0051, 0x100e)].value = tmpstr
+        # data['slice_normal'] is a dict with one key
+        orientation = list(data['slice_normal'])[0][1:]  # Get part of the key
+        ds[(0x0051, 0x100e)].value = orientation
         Sag_inc, Tra_inc, Cor_inc = 0, 0, 0
 
         R = nf.traj.rot_from_quat(data['rot_quat'])
 
-        if 'Tra' in tmpstr:
-            Tra_inc = tmp['dTra']
+        if orientation == 'Tra':
+            Tra_inc = data['slice_normal']['dTra']
             ds.ImageOrientationPatient[:] = [1, 0, 0, 0, 1, 0]
-        elif 'Sag' in tmpstr:
-            Sag_inc = tmp['dSag']
+        elif orientation == 'Sag':
+            Sag_inc = data['slice_normal']['dSag']
             ds.ImageOrientationPatient[:] = [0, 1, 0, 0, 0, 1]
-        elif 'Cor' in tmpstr:
-            Cor_inc = tmp['dCor']
+        elif orientation == 'Cor':
+            Cor_inc = data['slice_normal']['dCor']
             ds.ImageOrientationPatient[:] = [1, 0, 0, 0, 0, 1]
 
         imPos = np.array(data['slice_pos'].tolist())
