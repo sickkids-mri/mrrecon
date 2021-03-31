@@ -72,6 +72,20 @@ def _fix_matfile_format(d):
     return d
 
 
+def invert_velocity(v, dcm_img_max=4096):
+    """Inverts a velocity image that has been converted to uint16.
+
+    Inverts the velocity direction in a phase image that has already been
+    reference subtracted and converted to uint16.
+
+    Args:
+        v (uint16 array): Velocity image.
+        dcm_img_max (int): Max of uint16 images.
+    """
+    v = dcm_img_max - v
+    return v
+
+
 def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
     """Writes 4D flow dicoms.
 
@@ -107,6 +121,11 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
     fovx = dx * nx
     fovy = dy * ny
     fovz = dz * nz
+
+    # Invert velocity directions
+    # TODO Confirm this. Are these dependent on anything?
+    img[1] = invert_velocity(img[1])  # Invert z velocities
+    img[2] = invert_velocity(img[2])  # Invert x velocities
 
     thisdir = Path(__file__).parent
 
