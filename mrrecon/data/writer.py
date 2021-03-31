@@ -146,14 +146,31 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
     # Loop over each of the image series
     for v in range(nv):
         # Read dummy dicom file for current image series
-        if v == 0:
+        if v == 0:  # Magnitude image
             ds = pydicom.dcmread(thisdir / 'DummyDicoms' / '1.IMA')
-        elif v == 1:
+
+            # Try to automatically calculate a good window centre
+            window_center = _auto_window_centre(img[0])
+            ds.WindowCenter = window_center
+            ds.WindowWidth = 2 * window_center
+
+        elif v == 1:  # z velocity image
             ds = pydicom.dcmread(thisdir / 'DummyDicoms' / '2.IMA')
-        elif v == 2:
+
+            ds.WindowCenter = 0
+            ds.WindowWidth = 4096
+
+        elif v == 2:  # x velocity image
             ds = pydicom.dcmread(thisdir / 'DummyDicoms' / '3.IMA')
-        elif v == 3:
+
+            ds.WindowCenter = 0
+            ds.WindowWidth = 4096
+
+        elif v == 3:  # y velocity image
             ds = pydicom.dcmread(thisdir / 'DummyDicoms' / '4.IMA')
+
+            ds.WindowCenter = 0
+            ds.WindowWidth = 4096
 
         startTime = 0
         ds.NominalInterval = int(round(data['rr_avg']))
@@ -258,3 +275,14 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
                 ds.save_as(savename)
 
     return
+
+
+def _auto_window_centre(img):
+    # Try to auto window magnitude image
+    hist, bin_edges = np.histogram(img, bins=100)
+    inds = bin_edges < (img.mean() * 1.25)
+    inds = inds[:-1]
+    hist[inds] = 0  # Try to avoid background peak
+    ind = np.argmax(hist)
+    window_center = bin_edges[ind + 1]
+    return window_center
