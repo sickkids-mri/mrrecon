@@ -1,3 +1,4 @@
+from pathlib import Path
 import os
 import shutil
 import uuid
@@ -107,31 +108,33 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
     fovy = dy * ny
     fovz = dz * nz
 
-    thisdir = os.path.dirname(__file__)
+    thisdir = Path(__file__).parent
 
-    subdir_mag = outdir + '/I_MAG_ph'
-    subdir_vx = outdir + '/I_Vx_ph'
-    subdir_vy = outdir + '/I_Vy_ph'
-    subdir_vz = outdir + '/I_Vz_ph'
+    outdir = Path(outdir)
+
+    subdir_mag = outdir / 'mag'
+    subdir_vx = outdir / 'vx'
+    subdir_vy = outdir / 'vy'
+    subdir_vz = outdir / 'vz'
 
     subdirs = [subdir_mag, subdir_vx, subdir_vy, subdir_vz]
 
     for subdir in subdirs:
-        if os.path.exists(subdir):
+        if subdir.is_dir():
             shutil.rmtree(subdir)
-        os.mkdir(subdir)
+        subdir.mkdir()
 
     # Loop over each of the image series
     for v in range(nv):
         # Read dummy dicom file for current image series
         if v == 0:
-            ds = pydicom.dcmread(os.path.join(thisdir, 'DummyDicoms/1.IMA'))
+            ds = pydicom.dcmread(thisdir / 'DummyDicoms' / '1.IMA')
         elif v == 1:
-            ds = pydicom.dcmread(os.path.join(thisdir, 'DummyDicoms/2.IMA'))
+            ds = pydicom.dcmread(thisdir / 'DummyDicoms' / '2.IMA')
         elif v == 2:
-            ds = pydicom.dcmread(os.path.join(thisdir, 'DummyDicoms/3.IMA'))
+            ds = pydicom.dcmread(thisdir / 'DummyDicoms' / '3.IMA')
         elif v == 3:
-            ds = pydicom.dcmread(os.path.join(thisdir, 'DummyDicoms/4.IMA'))
+            ds = pydicom.dcmread(thisdir / 'DummyDicoms' / '4.IMA')
 
         startTime = 0
         ds.NominalInterval = int(round(data['rr_avg']))
@@ -190,7 +193,6 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
         if slices_to_include is None:
             slices_to_include = np.arange(nz)
 
-        start_slice = slices_to_include[0]
         frame_array = np.arange(0, ds.NominalInterval, ds.NominalInterval / nt)
 
         for iframe in range(nt):
@@ -205,28 +207,28 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
                 ds[(0x0019, 0x1015)].value[:] = imPos_slice.tolist()
 
                 if v == 0:
-                    outfilename = subdir_mag + '/im' + str(iframe) + '_' + str(islice - start_slice) + '.IMA'
+                    savename = subdir_mag / f'frame{iframe}_slice{islice}.IMA'
                     ds.SeriesNumber = 1
                     ds.ImageType = ['ORIGINAL', 'PRIMARY', 'M', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 M/RETRO/DIS2D'
 
                 if v == 1:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'in'
-                    outfilename = subdir_vz + '/im' + str(iframe) + '_' + str(islice - start_slice) + '.IMA'
+                    savename = subdir_vz / f'frame{iframe}_slice{islice}.IMA'
                     ds.SeriesNumber = 4
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
                 if v == 3:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'ap'
-                    outfilename = subdir_vy + '/im' + str(iframe) + '_' + str(islice - start_slice) + '.IMA'
+                    savename = subdir_vy / f'frame{iframe}_slice{islice}.IMA'
                     ds.SeriesNumber = 3
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
 
                 if v == 2:
                     ds.SequenceName = 'fl3d1_v' + str(int(data['venc'])) + 'rl'
-                    outfilename = subdir_vx + '/im' + str(iframe) + '_' + str(islice - start_slice) + '.IMA'
+                    savename = subdir_vx / f'frame{iframe}_slice{islice}.IMA'
                     ds.SeriesNumber = 2
                     ds.ImageType = ['DERIVED', 'PRIMARY', 'P', 'RETRO', 'DIS2D']
                     ds[(0x0051, 0x1016)].value = 'p2 P/RETRO/DIS2D'
@@ -234,6 +236,6 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
                 tmpslice = img[v, iframe, islice, :, :]
                 ds.PixelData = tmpslice.tobytes()
                 ds.SOPInstanceUID = uuid.uuid4().hex  # Generate unique UID
-                ds.save_as(outfilename)
+                ds.save_as(savename)
 
     return
