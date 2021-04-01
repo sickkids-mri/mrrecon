@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import shutil
+import random
 import uuid
 
 import numpy as np
@@ -54,6 +55,8 @@ def _fix_matfile_format(d):
     d['systemmodel'] = str(d['systemmodel'][0])
     d['acquisition_date'] = str(d['acquisition_date'][0])
     d['acquisition_time'] = str(d['acquisition_time'][0])
+    d['StudyLOID'] = str(d['StudyLOID'][0])
+    d['SeriesLOID'] = str(d['SeriesLOID'][0])
     d['PatientLOID'] = str(d['PatientLOID'][0])
     d['tr'] = d['tr'].item()
     d['te'] = d['te'].item()
@@ -86,7 +89,8 @@ def invert_velocity(v, dcm_img_max=4096):
     return v
 
 
-def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
+def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
+                         slices_to_include=None):
     """Writes 4D flow dicoms.
 
     Dicoms work for the 4D flow module in cvi42.
@@ -98,6 +102,8 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
             and `img[3]` should be the y velocity image.
         data (dict): Output dictionary from the reconstruction pipeline.
         outdir (str): Folder where dicoms will be saved.
+        save_as_unique_study (bool): Use this to make dicoms appear in their
+            own study in the study list in cvi42.
         slices_to_include (array): 1D array of integers indicating which slices
             should be written to dicoms.
     """
@@ -142,6 +148,10 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
         if subdir.is_dir():
             shutil.rmtree(subdir)
         subdir.mkdir()
+
+    if save_as_unique_study:
+        # Random integer up to 28 digits (to be used to modify study ID)
+        unique_study = random.randint(1, 9999999999999999999999999999)
 
     # Loop over each of the image series
     for v in range(nv):
@@ -195,6 +205,13 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
         ds.ContentDate = data['acquisition_date']
         ds.SeriesTime = data['acquisition_time']
         ds.StudyTime = data['acquisition_time']
+
+        if save_as_unique_study:
+            # Modify last part of ID
+            parts = ds.StudyInstanceUID.split('.')
+            parts[-1] = str(int(parts[-1]) + unique_study)
+            ds.StudyInstanceUID = '.'.join(parts)
+
         # ds.StudyInstanceUID = data['StudyLOID']
         # ds.SeriesInstanceUID = data['SeriesLOID']
         ds.PatientName = data.get('PatientName', 'anon nona')
