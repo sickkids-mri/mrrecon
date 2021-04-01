@@ -186,7 +186,9 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
         ds[(0x0051, 0x100b)].value = str(ny) + '*' + str(nx) + 's'
         ds[(0x0051, 0x100c)].value = 'FoV ' + str(fovy) + '*' + str(fovx)
 
+        ds.Manufacturer = data['vendor']
         ds.ManufacturerModelName = data['systemmodel']
+        ds.MagneticFieldStrength = None
         ds.AcquisitionDate = data['acquisition_date']
         ds.SeriesDate = data['acquisition_date']
         ds.StudyDate = data['acquisition_date']
@@ -195,14 +197,36 @@ def write_4d_flow_dicoms(img, data, outdir, slices_to_include=None):
         ds.StudyTime = data['acquisition_time']
         # ds.StudyInstanceUID = data['StudyLOID']
         # ds.SeriesInstanceUID = data['SeriesLOID']
-        patient_name = data.get('PatientName', None)
-        if patient_name is not None:
-            ds['PatientName'].value = patient_name
-        ds['PatientID'].value = data['PatientLOID']
+        ds.PatientName = data.get('PatientName', 'anon nona')
+        # ds['PatientID'].value = data['PatientLOID']
+        ds.PatientID = None
+        ds.PatientBirthDate = None
+        ds.PatientSex = None
+        ds.PatientAge = None
+        ds.OperatorsName = None
+        ds.PatientPosition = None
 
-        ds['RepetitionTime'].value = data['tr']
-        ds['EchoTime'].value = data['te']
-        ds['FlipAngle'].value = data['flipangle']
+        ds.BodyPartExamined = None
+        ds.ImageComments = None
+        ds.LargestImagePixelValue = 4096
+        ds.PatientSize = None
+        ds.PatientWeight = None
+        ds.PerformedProcedureStepDescription = None
+        ds.PerformedProcedureStepID = None
+        ds.PerformedProcedureStepStartDate = None
+        ds.PerformedProcedureStepStartTime = None
+        ds.PixelBandwidth = None
+        ds.ProtocolName = None
+        ds.SAR = None
+        ds.SeriesDescription = None
+        ds.SoftwareVersions = None
+        ds.StationName = None
+        ds.StudyDescription = None
+        ds.TransmitCoilName = None
+
+        ds.RepetitionTime = data['tr']
+        ds.EchoTime = data['te']
+        ds.FlipAngle = data['flipangle']
 
         # data['slice_normal'] is a dict with one key
         orientation = list(data['slice_normal'])[0][1:]  # Get part of the key
