@@ -72,6 +72,7 @@ def _fix_matfile_format(d):
     d['rot_quat'] = d['rot_quat'][0]
 
     d['venc'] = d['venc'].item()
+    d['weight'] = d['weight'].item()
     return d
 
 
@@ -227,7 +228,7 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
         ds.ImageComments = None
         ds.LargestImagePixelValue = 4096
         ds.PatientSize = None
-        ds.PatientWeight = None
+        ds.PatientWeight = data['weight']
         ds.PerformedProcedureStepDescription = None
         ds.PerformedProcedureStepID = None
         ds.PerformedProcedureStepStartDate = None
