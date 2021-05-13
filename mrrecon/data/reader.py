@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 
 import twixtools
@@ -29,7 +31,6 @@ def _make_dict_from_hdr(dict_string):
 
     Works for Config and Dicom.
     """
-    import re
     pattern = re.compile(
             '<Param(Long|String|Double)\\."([^"]+)">  { ([^}]+)  }')
     out = {}
@@ -175,7 +176,11 @@ class DataLoader:
         self.data['venc'] = float(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nVelocity'])  # noqa
         self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
 
-        self.data['weight'] = dicom['flUsedPatientWeight']
+        self.data['weight'] = dicom['flUsedPatientWeight']  # kg
+
+        regex = r'flPatientHeight.*?(\d+.\d+).*?}'
+        match = re.search(regex, hdr['Meas'], re.DOTALL)
+        self.data['height'] = float(match.group(1))  # mm
 
         # Convert from nanoseconds to microseconds
         self.data['dwelltime'] = float(hdr['MeasYaps']['sRXSPEC']['alDwellTime'][0]) / 1000  # noqa
