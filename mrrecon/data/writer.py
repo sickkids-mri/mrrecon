@@ -73,6 +73,11 @@ def _fix_matfile_format(d):
 
     d['venc'] = d['venc'].item()
     d['weight'] = d['weight'].item()
+
+    d['height'] = d.get('height', None)
+    if d['height'] is not None:
+        d['height'].item()
+
     return d
 
 
@@ -227,7 +232,9 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
         ds.BodyPartExamined = None
         ds.ImageComments = None
         ds.LargestImagePixelValue = 4096
-        ds.PatientSize = None
+        ds.PatientSize = data.get('height', None)
+        if ds.PatientSize is not None:
+            ds.PatientSize = ds.PatientSize / 1000  # Convert mm to m
         ds.PatientWeight = data['weight']
         ds.PerformedProcedureStepDescription = None
         ds.PerformedProcedureStepID = None
