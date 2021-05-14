@@ -193,6 +193,8 @@ class DataLoader:
         grad_mode = hdr['MeasYaps']['sGRADSPEC']['ucMode']
 
         # Dictionary values depend on system field strength
+        # TODO Should these values be moved to their own file, so they can be
+        # conveniently adjusted in case they change?
         if self.data['field_strength'] < 2:
 
             self.data['rise_time'] = {  # Rise time in usec/(mT/m)
