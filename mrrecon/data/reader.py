@@ -197,8 +197,8 @@ class DataLoader:
 
             self.data['rise_time'] = {  # Rise time in usec/(mT/m)
                 1: 5.88,  # FAST
-                2: 10.0,  # NORMAL
-                0: 10.0,  # Also NORMAL
+                2: 12.5,  # NORMAL
+                0: 12.5,  # Also NORMAL
                 4: 20.0   # WHISPER
             }.get(grad_mode)  # Returns None if there is no value for grad_mode
 
