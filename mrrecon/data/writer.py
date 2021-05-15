@@ -76,7 +76,7 @@ def _fix_matfile_format(d):
 
     d['height'] = d.get('height', None)
     if d['height'] is not None:
-        d['height'].item()
+        d['height'] = d['height'].item()
 
     return d
 
