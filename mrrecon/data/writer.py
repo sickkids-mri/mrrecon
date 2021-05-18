@@ -52,6 +52,9 @@ def _fix_matfile_format(d):
     d['fovx_prescribed'] = d['fovx_prescribed'].item()
     d['fovy_prescribed'] = d['fovy_prescribed'].item()
     d['fovz_prescribed'] = d['fovz_prescribed'].item()
+    d['fovx_shift'] = d['fovx_shift'].item()
+    d['fovy_shift'] = d['fovy_shift'].item()
+    d['fovz_shift'] = d['fovz_shift'].item()
     d['rr_avg'] = d['rr_avg'].item()
     d['systemmodel'] = str(d['systemmodel'][0])
     d['acquisition_date'] = str(d['acquisition_date'][0])
@@ -69,6 +72,7 @@ def _fix_matfile_format(d):
     d['slice_pos'] = np.array([d['slice_pos']['flSag'].item().item(),
                                d['slice_pos']['flCor'].item().item(),
                                d['slice_pos']['flTra'].item().item()])
+    d['recon_pos'] = d['recon_pos'][0]
 
     d['rot_quat'] = d['rot_quat'][0]
 
