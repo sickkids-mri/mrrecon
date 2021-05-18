@@ -341,8 +341,8 @@ def crop(img, img_pos, x_inds=None, y_inds=None, z_inds=None,
     Args:
         img (array): Array with shape (..., nz, ny, nx).
         img_pos (array): Array with shape (3,). Position of the centre voxel in
-            mm. Formatting should be the same as the slice position parameter
-            from the Siemens twix data header.
+            mm. Coordinate system should be the same as the slice position
+            parameter from the Siemens twix data header.
         x_inds (tuple): 2-tuple containing indices to slice the input in x.
         y_inds (tuple): 2-tuple containing indices to slice the input in y.
         z_inds (tuple): 2-tuple containing indices to slice the input in z.
