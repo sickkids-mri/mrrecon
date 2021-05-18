@@ -96,8 +96,7 @@ def invert_velocity(v, dcm_img_max=4096):
     return v
 
 
-def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
-                         slices_to_include=None):
+def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True):
     """Writes 4D flow dicoms.
 
     Dicoms work for the 4D flow module in cvi42.
@@ -111,8 +110,6 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
         outdir (str): Folder where dicoms will be saved.
         save_as_unique_study (bool): Use this to make dicoms appear in their
             own study in the study list in cvi42.
-        slices_to_include (array): 1D array of integers indicating which slices
-            should be written to dicoms.
     """
     assert img.ndim == 5, f'5D array required. Got {img.ndim}D array instead.'
     nv, nt, nz, ny, nx = img.shape
@@ -276,9 +273,6 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
         imPos_edge = (imPos - fovy / 2 * R[:, 0] + fovx / 2 * R[:, 1]
                       - fovz / 2 * np.array([Sag_inc, Cor_inc, Tra_inc]))
 
-        if slices_to_include is None:
-            slices_to_include = np.arange(nz)
-
         frame_array = np.arange(0, ds.NominalInterval, ds.NominalInterval / nt)
 
         for iframe in range(nt):
@@ -286,7 +280,7 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
             ds.InstanceCreationTime = str(startTime + frame_array[iframe]/1000)
             ds.ContentTime = str(startTime + frame_array[iframe]/1000)
 
-            for islice in slices_to_include:
+            for islice in range(nz):
                 imPos_slice = imPos_edge + dz * islice * np.array([Sag_inc, Cor_inc, Tra_inc])
                 ds.SliceLocation = imPos_slice[-1]
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
