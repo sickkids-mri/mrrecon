@@ -272,7 +272,7 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True):
             Cor_inc = data['slice_normal']['dCor']
             ds.ImageOrientationPatient[:] = [1, 0, 0, 0, 0, 1]
 
-        imPos = np.array(data['slice_pos'].tolist())
+        imPos = data['recon_pos']
 
         imPos_edge = (imPos - fovy / 2 * R[:, 0] + fovx / 2 * R[:, 1]
                       - fovz / 2 * np.array([Sag_inc, Cor_inc, Tra_inc]))
