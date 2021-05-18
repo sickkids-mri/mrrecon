@@ -273,7 +273,7 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
         imPos = np.array(data['slice_pos'].tolist())
 
         imPos_edge = (imPos - fovy / 2 * R[:, 0] + fovx / 2 * R[:, 1]
-                      - fovz / 2 * (np.array([Sag_inc, Cor_inc, Tra_inc])))
+                      - fovz / 2 * np.array([Sag_inc, Cor_inc, Tra_inc]))
 
         if slices_to_include is None:
             slices_to_include = np.arange(nz)
