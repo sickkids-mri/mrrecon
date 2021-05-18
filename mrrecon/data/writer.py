@@ -3,6 +3,7 @@ import os
 import shutil
 import random
 import uuid
+import math
 
 import numpy as np
 
@@ -335,3 +336,56 @@ def _auto_window_centre(img):
     ind = np.argmax(hist)
     window_center = bin_edges[ind + 1]
     return window_center
+
+
+def crop(img, img_pos, x_inds=None, y_inds=None, z_inds=None,
+         dx=None, dy=None, dz=None):
+    """Crops a 3D image and calculates the new image position.
+
+    Calculates the new image position for off-centre cropping as well.
+
+    Args:
+        img (array): Array with shape (..., nz, ny, nx).
+        img_pos (array): Array with shape (3,). Position of the centre voxel in
+            mm. Formatting should be the same as the slice position parameter
+            from the Siemens twix data header.
+        x_inds (tuple): 2-tuple containing indices to slice the input in x.
+        y_inds (tuple): 2-tuple containing indices to slice the input in y.
+        z_inds (tuple): 2-tuple containing indices to slice the input in z.
+        dx (float): Pixel width in x.
+        dy (float): Pixel width in y.
+        dz (float): Pixel width in z.
+
+    Returns:
+        img_cropped (array): Input cropped according to the provided indices.
+        img_pos_new (array): Position of the centre voxel in the cropped image
+            in mm.
+    """
+    img_cropped = np.copy(img)
+    img_pos_new = np.copy(img_pos)
+    nz, ny, nx = img.shape[-3:]
+
+    def calc_shift(num_pixels, inds):
+        # Calculates shift in number of pixels
+        old_centre = math.floor(num_pixels / 2)
+        new_centre = math.floor((inds[1] + inds[0]) / 2)
+        shift = new_centre - old_centre
+        return shift
+
+    if x_inds is not None:
+        shift = calc_shift(nx, x_inds)
+        img_pos_new[1] = img_pos_new[1] + shift * dx
+        img_cropped = img_cropped[..., :, :, x_inds[0]:x_inds[1]]
+
+    if y_inds is not None:
+        shift = calc_shift(ny, y_inds)
+        img_pos_new[0] = img_pos_new[0] + shift * dy
+        img_cropped = img_cropped[..., :, y_inds[0]:y_inds[1], :]
+
+    if z_inds is not None:
+        shift = calc_shift(nz, z_inds)
+        img_pos_new[2] = img_pos_new[2] - shift * dz
+        # Not sure why subtracted here when others were added
+        img_cropped = img_cropped[..., z_inds[0]:z_inds[1], :, :]
+
+    return img_cropped, img_pos_new
