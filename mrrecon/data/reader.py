@@ -173,8 +173,12 @@ class DataLoader:
         self.data['flipangle'] = float(hdr['MeasYaps']['adFlipAngleDegree'][0])  # noqa
 
         # VENC in (cm/s)
-        self.data['venc'] = float(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nVelocity'])  # noqa
-        self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
+        try:
+            self.data['venc'] = float(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nVelocity'])  # noqa
+            self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
+        except KeyError: #some sequences don't have the Angio card
+            self.data['venc'] = 0
+            self.data['veldir'] = 0
 
         self.data['weight'] = dicom['flUsedPatientWeight']  # kg
 
@@ -378,6 +382,7 @@ class Flow4DLoader(DataLoader):
                     ncoils, nro = first_line.data.shape
                     self.data['kspace'] = np.empty((ncoils, nlines, nro),
                                                    dtype=np.complex64)
+                    
 
                 # Loads and stores each line
                 f = 0
@@ -394,14 +399,19 @@ class Flow4DLoader(DataLoader):
 
             else:
                 # It is noise scan
-                nlines = len(scan['mdb'])
-                ncoils, nro = first_line.data.shape
-
-                self.data['noise'] = np.empty((ncoils, nlines, nro),
-                                              dtype=np.complex64)
-
-                for idx, line in enumerate(scan['mdb']):
-                    self.data['noise'][:, idx, :] = line.data
+                try:
+                    nlines = len(scan['mdb'])
+                    ncoils, nro = first_line.data.shape
+    
+                    self.data['noise'] = np.empty((ncoils, nlines, nro),
+                                                  dtype=np.complex64)
+    
+                    for idx, line in enumerate(scan['mdb']):
+                        self.data['noise'][:, idx, :] = line.data
+                        
+                except ValueError:
+                    print('Error reading noise scan. Noise data not saved.')
+                    continue
 
         return image_scans
 
