@@ -100,3 +100,40 @@ def cardiac_vel(triggers, nt, times, kspace, traj, angles=None, dcf=None):
             dcf_vt.append(dcf_t)
 
     return kspace_vt, traj_vt, angles_vt, dcf_vt
+
+
+def sim_heartbeats(acq_time, rr_base=400, std=7, delta=0.1):
+    """Simulates heart beats using a bounded random walk.
+
+    The length of each step (heart beat) is normally distributed.
+
+    References:
+        M. S. Jansz et al. (2010). Metric Optimized Gating for Fetal Cardiac
+        MRI. Magnetic Resonance in Medicine, 64(5), 1304-1314.
+
+    Args:
+        acq_time (float): Duration of data acquisition (ms).
+        rr_base (float): Baseline RR interval (ms).
+        std (float): Standard deviation of the RR intervals (ms).
+        delta (float): Strength of the bias bounding the walk around the
+            baseline value. Should be a value between 0 and 1.
+
+    Returns:
+        triggers (array): Trigger times (e.g. times at R-waves) (ms).
+    """
+    rr = []  # List to hold sequence of RR intervals
+    rr.append(rr_base + np.random.normal(0, std))  # First RR value
+    elapsed_time = rr[0]  # Holds elapsed time in the simulation (ms)
+    triggers = [0, rr[0]]  # The trigger times (ms)
+    b = 1  # Index for current beat
+    while elapsed_time < acq_time:  # Ensures the heart beats longer than acq
+        # Mean of the normally distributed step length
+        mean = delta * (rr_base - rr[b - 1])
+        # Random walk and append to list of RR intervals
+        rr.append(rr[b - 1] + np.random.normal(mean, std))
+        elapsed_time = elapsed_time + rr[b]
+        triggers.append(elapsed_time)
+        b = b + 1
+
+    triggers = np.array(triggers, dtype=np.float64)
+    return triggers
