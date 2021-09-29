@@ -45,30 +45,19 @@ def test_cardiac(num_triggers=100, tr=4.1, nt=16):
     inds = inds % nt
 
     for t in range(nt):
-        kspace[:] = 0
-        traj[:] = 0
-        angles[:] = 0
-        dcf[:] = 0
-
-        # Set points corresponding to current cardiac phase to 1
+        # Set points corresponding to current cardiac phase to cardiac phase #
         inds_t = inds == t
-        kspace[:, inds_t, :] = 1
-        traj[inds_t, :, :] = 1
-        angles[inds_t, :] = 1
-        dcf[inds_t, :] = 1
+        kspace[:, inds_t, :] = t
+        traj[inds_t, :, :] = t
+        angles[inds_t, :] = t
+        dcf[inds_t, :] = t
 
-        kspace_t, traj_t, angles_t, dcf_t = \
-            mr.sort.cardiac(triggers, nt, times, kspace, traj, angles, dcf)
+    kspace_t, traj_t, angles_t, dcf_t = \
+        mr.sort.cardiac(triggers, nt, times, kspace, traj, angles, dcf)
 
-        for tt in range(nt):
-            # Data from current cardiac phase should be all 1s, else 0s
-            if tt == t:
-                npt.assert_equal(kspace_t[tt], 1)
-                npt.assert_equal(traj_t[tt], 1)
-                npt.assert_equal(angles_t[tt], 1)
-                npt.assert_equal(dcf_t[tt], 1)
-            else:
-                npt.assert_equal(kspace_t[tt], 0)
-                npt.assert_equal(traj_t[tt], 0)
-                npt.assert_equal(angles_t[tt], 0)
-                npt.assert_equal(dcf_t[tt], 0)
+    for t in range(nt):
+        # Data from current cardiac phase should be all equal to t
+        npt.assert_equal(kspace_t[t], t)
+        npt.assert_equal(traj_t[t], t)
+        npt.assert_equal(angles_t[t], t)
+        npt.assert_equal(dcf_t[t], t)
