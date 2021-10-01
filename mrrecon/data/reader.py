@@ -243,7 +243,7 @@ class DataLoader:
         self.data['PatientLOID'] = config['PatientLOID']
         self.data['protocol_name'] = hdr['MeasYaps']['tProtocolName']
         self.data['slice_normal'] = hdr['MeasYaps']['sSliceArray']['asSlice'][0]['sNormal']  # noqa
-        self.data['patient_orientation'] = str(dicom['tPatientPosition'][0])
+        self.data['patient_orientation'] = dicom['tPatientPosition']
 
         # Flow encoding navigators collection flag
         try:
