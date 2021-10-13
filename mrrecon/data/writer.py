@@ -101,7 +101,7 @@ def invert_velocity(v, dcm_img_max=4096):
 
 
 def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
-                         use_this_study_id=None):
+                         use_this_study_id=None, SOPInstanceUID_init=1):
     """Writes 4D flow dicoms.
 
     Dicoms work for the 4D flow module in cvi42.
@@ -119,6 +119,10 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
         use_this_study_id (string): If a value is provided, it will be set as
             the dicom StudyInstanceUID (only if `save_as_unique_study` is
             True). The randomly generated StudyInstanceUID will not be used.
+        SOPInstanceUID_init (int): Each dicom file in this set of four series
+            will have its SOPInstanceUID incremented by 1, starting from
+            `SOPInstanceUID_init`. Note: Each dicom file in a study should
+            have a unique SOPInstanceUID.
     """
     assert img.ndim == 5, f'5D array required. Got {img.ndim}D array instead.'
     nv, nt, nz, ny, nx = img.shape
@@ -166,6 +170,7 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
         # Random integer up to 28 digits (to be used to modify study ID)
         unique_study = random.randint(1, 9999999999999999999999999999)
 
+    SOPInstanceUID = SOPInstanceUID_init
     # Loop over each of the image series
     for v in range(nv):
         # Read dummy dicom file for current image series
@@ -326,7 +331,8 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
 
                 tmpslice = img[v, iframe, islice, :, :]
                 ds.PixelData = tmpslice.tobytes()
-                ds.SOPInstanceUID = uuid.uuid4().hex  # Generate unique UID
+                ds.SOPInstanceUID = str(SOPInstanceUID)
+                SOPInstanceUID += 1
                 ds.save_as(savename)
 
     return
