@@ -100,7 +100,8 @@ def invert_velocity(v, dcm_img_max=4096):
     return v
 
 
-def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True):
+def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
+                         use_this_study_id=None):
     """Writes 4D flow dicoms.
 
     Dicoms work for the 4D flow module in cvi42.
@@ -113,7 +114,11 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True):
         data (dict): Output dictionary from the reconstruction pipeline.
         outdir (str): Folder where dicoms will be saved.
         save_as_unique_study (bool): Use this to make dicoms appear in their
-            own study in the study list in cvi42.
+            own study in the study list in cvi42. If False, the study ID from
+            the dummy dicoms will be used.
+        use_this_study_id (string): If a value is provided, it will be set as
+            the dicom StudyInstanceUID (only if `save_as_unique_study` is
+            True). The randomly generated StudyInstanceUID will not be used.
     """
     assert img.ndim == 5, f'5D array required. Got {img.ndim}D array instead.'
     nv, nt, nz, ny, nx = img.shape
@@ -219,6 +224,8 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True):
             parts = ds.StudyInstanceUID.split('.')
             parts[-1] = str(int(parts[-1]) + unique_study)
             ds.StudyInstanceUID = '.'.join(parts)
+            if use_this_study_id is not None:
+                ds.StudyInstanceUID = use_this_study_id
 
         # ds.StudyInstanceUID = data['StudyLOID']
         # ds.SeriesInstanceUID = data['SeriesLOID']
