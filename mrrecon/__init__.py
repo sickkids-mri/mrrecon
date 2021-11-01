@@ -8,6 +8,8 @@ from mrrecon import prox
 from mrrecon import plot
 from mrrecon import mem
 from mrrecon import utils
+from mrrecon import metrics
+from mrrecon import traj
 
 from mrrecon.mem import *
 from mrrecon.utils import *
