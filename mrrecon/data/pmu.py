@@ -163,6 +163,30 @@ def extrapolate_triggers(triggers, num_extrap=5):
     return triggers
 
 
+def perturb_triggers(triggers):
+    """Adds or subtracts a small, insignificant number to each trigger time.
+
+    This is necessary when trigger times are determined from the same time
+    stamps as k-space data. K-space data that fall right on a bin edge when
+    sorting will all be sorted into one of two possible bins, when they should
+    have equal probability of going into either bin.
+
+    Args:
+        triggers (array): 1D array containing cardiac trigger times.
+
+    Returns:
+        triggers (array): 1D array containing perturbed cardiac trigger times.
+    """
+    num_triggers = len(triggers)
+    eps = triggers.mean() * 1e-6
+    direction = np.ones(num_triggers)  # Vector of -1 or 1
+    rnd = np.random.rand(num_triggers) > 0.5  # Standard uniform distribution
+    direction[rnd] = -1
+    eps = direction * eps
+    triggers = triggers + eps
+    return triggers
+
+
 def hr_to_triggers(hr, first, last):
     """Calculates trigger times based on a constant heart rate.
 
