@@ -163,7 +163,7 @@ def extrapolate_triggers(triggers, num_extrap=5):
     return triggers
 
 
-def perturb_triggers(triggers):
+def perturb_triggers(triggers, eps=1):
     """Adds or subtracts a small, insignificant number to each trigger time.
 
     This is necessary when trigger times are determined from the same time
@@ -172,13 +172,13 @@ def perturb_triggers(triggers):
     have equal probability of going into either bin.
 
     Args:
-        triggers (array): 1D array containing cardiac trigger times.
+        triggers (array): 1D array containing cardiac trigger times in ms.
+        eps (float): Time to add or subtract (ms).
 
     Returns:
         triggers (array): 1D array containing perturbed cardiac trigger times.
     """
     num_triggers = len(triggers)
-    eps = triggers.mean() * 1e-6
     direction = np.ones(num_triggers)  # Vector of -1 or 1
     rnd = np.random.rand(num_triggers) > 0.5  # Standard uniform distribution
     direction[rnd] = -1
