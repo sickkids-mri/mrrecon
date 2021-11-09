@@ -132,7 +132,8 @@ def read_4dflow(reportfile):
             if match:
                 # Get name of flow plane. Flow planes should be renamed from
                 # 'Flow 1', 'Flow 2', etc.
-                flow_plane_name = line.rstrip(' - Complete Report\n')
+                # 19 characters in ' - Complete Report\n'
+                flow_plane_name = line[:-19]
 
                 outs[flow_plane_name] = {}
 
