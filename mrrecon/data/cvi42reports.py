@@ -127,12 +127,12 @@ def read_4dflow(reportfile):
         for line_num, line in enumerate(section):
             # A number of flow planes can be set for each segmentation.
             # Loop through to find where each flow plane starts.
-            regex = r'Flow \d+ - Complete Report'
+            regex = r' - Complete Report'
             match = re.search(regex, line)
             if match:
-                # Get name of flow plane. Currently they are just named
+                # Get name of flow plane. Flow planes should be renamed from
                 # 'Flow 1', 'Flow 2', etc.
-                flow_plane_name = match.group(0)[:6]
+                flow_plane_name = match.group(0).rstrip(regex)
 
                 outs[flow_plane_name] = {}
 
