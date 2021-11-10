@@ -81,7 +81,12 @@ def read_2dflow(reportfile):
                         arr = np.array(data)  # (nt, num_headings)
 
                         for c, heading in enumerate(headings):
-                            outs[vessel_name][heading] = arr[:, c]
+                            # Convert to float if possible, else keep as string
+                            try:
+                                outs[vessel_name][heading] = \
+                                    arr[:, c].astype(np.float64)
+                            except ValueError:
+                                outs[vessel_name][heading] = arr[:, c]
 
                         break
 
@@ -165,7 +170,12 @@ def read_4dflow(reportfile):
                         arr = np.array(data)  # (nt, num_headings)
 
                         for c, heading in enumerate(headings):
-                            outs[flow_plane_name][heading] = arr[:, c]
+                            # Convert to float if possible, else keep as string
+                            try:
+                                outs[flow_plane_name][heading] = \
+                                    arr[:, c].astype(np.float64)
+                            except ValueError:
+                                outs[flow_plane_name][heading] = arr[:, c]
 
                         break
 
