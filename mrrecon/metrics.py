@@ -28,3 +28,27 @@ def electrostatic_potential(points):
         out += x.sum()
 
     return out
+
+
+def std_heartbeats(triggers1, triggers2):
+    """Calculates the standard deviation of the difference in RR intervals.
+
+    Calculates the standard deviation of the difference in RR intervals between
+    two methods. E.g. compares the triggers obtained from self-gating and ECG.
+
+    Args:
+        triggers1 (array): 1D array containing the trigger times from one
+            method.
+        triggers2 (array): 1D array containing the trigger times from the
+            second method. The number of triggers provided by each method
+            needs to be the same for the calculation of this metric.
+
+    Returns:
+        out (float): Value of the metric, in the same units as the triggers.
+    """
+    assert triggers1.shape == triggers2.shape
+
+    rr1 = np.diff(triggers1)
+    rr2 = np.diff(triggers2)
+    out = np.std(rr1 - rr2)
+    return out
