@@ -11,8 +11,8 @@ def cardiac(triggers, nt, times, kspace, traj, angles=None, dcf=None):
             k-space. Shape (na,).
         kspace (array): Shape (ncoils, na, ns).
         traj (array): Shape (na, ns, ndim).
-        angles (array): Shape (na, ...).
-        dcf (array): Shape (na, ns).
+        angles (array or None): Shape (na, ...).
+        dcf (array or None): Shape (na, ns).
 
     Returns:
         times_t (list): Length `nt`.
@@ -68,8 +68,8 @@ def vel_card(triggers, nt, times, kspace, traj, angles=None, dcf=None):
             k-space. Shape (na * nv,).
         kspace (array): Shape (ncoils, nv, na, ns).
         traj (array): Shape (nv, na, ns, ndim).
-        angles (array): Shape (nv, na, ...).
-        dcf (array): Shape (nv, na, ns).
+        angles (array or None): Shape (nv, na, ...).
+        dcf (array or None): Shape (nv, na, ns).
 
     Returns:
         times_vt (list): List of lists. List 'shape' is (nv, nt).
@@ -108,6 +108,233 @@ def vel_card(triggers, nt, times, kspace, traj, angles=None, dcf=None):
             dcf_vt.append(dcf_t)
 
     return times_vt, kspace_vt, traj_vt, angles_vt, dcf_vt
+
+
+def calc_resp_edges(resp_sig, nresp):
+    """Calculates respiratory bin edges.
+
+    This may include flipping the respiratory signal so that respiratory phases
+    are ordered from max inspiration to max expiration. Estimation of which
+    part of the signal corresponds to inspiration/expiration may be incorrect.
+
+    Args:
+        resp_sig (array): 1D array containing the respiratory signal. The
+            respiratory signal should have length `na`.
+        nresp (int): Number of respiratory phases to sort into.
+
+    Returns:
+        resp_edges (array): 1D array with shape (nresp + 1,).
+        resp_sig (array): Returns the respiratory signal but it may have been
+            flipped. Use this respiratory signal (rather than the input
+            respiratory signal) with the returned bin edges.
+    """
+    mean = resp_sig.mean()
+
+    # Calculate initial fine histogram
+    num_small_bins = nresp * 4
+    hist, edges = np.histogram(resp_sig, bins=num_small_bins)
+    # Calculate bin centres
+    centres = (edges[:-1] + edges[1:]) / 2
+
+    # Determine first and last resp phase bin centres
+    # Assume max expiration has the most data
+    max_expiration = centres[np.argmax(hist)]
+    last = max_expiration
+    half_ind = int(num_small_bins / 2)
+    if last < mean:  # If negative:
+        first = centres[half_ind:][np.argmax(hist[half_ind:])]
+    else:  # Else positive
+        first = centres[:half_ind][np.argmax(hist[:half_ind])]
+
+    # Make the first respiratory bin be negative, so that the order of the
+    # respiratory phases after np.digitize is max inspiration to max expiration
+    if first > mean:
+        resp_sig = -resp_sig  # Flip respiratory signal
+        first = -first
+        last = -last
+
+    # Respiratory bin width (width on signal axis)
+    bin_width = np.abs(last - first) / (nresp - 1)
+
+    # Create bin edges
+    limits = [first - bin_width / 2, last + bin_width / 2]
+    resp_edges = np.linspace(limits[0], limits[1], num=nresp+1)
+    return resp_edges, resp_sig
+
+
+def respiratory(resp_sig, resp_edges, times, kspace, traj,
+                angles=None, dcf=None):
+    """Sorts data into respiratory phases.
+
+    Args:
+        resp_sig (array): 1D array containing the respiratory signal. The
+            respiratory signal should have length `na`.
+        resp_edges (array): 1D array with shape (nresp + 1,).
+            Respiratory bin edges.
+        times (array): 1D array containing the time stamps for each line of
+            k-space. Shape (na,).
+        kspace (array): Shape (ncoils, na, ns).
+        traj (array): Shape (na, ns, ndim).
+        angles (array or None): Shape (na, ...).
+        dcf (array or None): Shape (na, ns).
+
+    Returns:
+        times_r (list): Length `nresp`.
+            Each item in the list is an array with shape (na_r,).
+        kspace_r (list): Length `nresp`.
+            Each item in the list is an array with shape (ncoils, na_r, ns).
+        traj_r (list): Length `nresp`.
+            Each item in the list is an array with shape (na_r, ns, ndim).
+        angles_r (list or None): Length `nresp`.
+            Each item in the list is an array with shape (na_r, ...).
+        dcf_r (list or None): Length `nresp`.
+            Each item in the list is an array with shape (na_r, ns).
+    """
+    nresp = len(resp_edges) - 1
+
+    inds = np.digitize(resp_sig, resp_edges)
+    inds -= 1  # Start indices from 0 instead of 1
+    # Data falling outside the bin range will have indices of -1 and `nresp`.
+    # Sort those data into corresponding nearest bin
+    inds[inds == -1] = 0
+    inds[inds == nresp] == nresp - 1
+
+    times_r = []
+    kspace_r = []
+    traj_r = []
+    angles_r = [] if angles is not None else None
+    dcf_r = [] if dcf is not None else None
+
+    for r in range(nresp):
+        inds_r = (inds == r)
+        times_r.append(times[inds_r])
+        kspace_r.append(kspace[:, inds_r, :])
+        traj_r.append(traj[inds_r])
+        if angles is not None:
+            angles_r.append(angles[inds_r])
+
+        if dcf is not None:
+            dcf_r.append(dcf[inds_r])
+
+    return times_r, kspace_r, traj_r, angles_r, dcf_r
+
+
+def resp_card(resp_sig, resp_edges, triggers, nt, times, kspace, traj,
+              angles=None, dcf=None):
+    """Sorts data into respiratory phases and then into cardiac phases.
+
+    Args:
+        resp_sig (array): 1D array containing the respiratory signal. The
+            respiratory signal should have length `na`.
+        resp_edges (array): 1D array with shape (nresp + 1,).
+            Respiratory bin edges.
+        triggers (array): 1D array containing cardiac trigger times (ms).
+        nt (int): Number of cardiac phases to sort into.
+        times (array): 1D array containing the time stamps for each line of
+            k-space. Shape (na,).
+        kspace (array): Shape (ncoils, na, ns).
+        traj (array): Shape (na, ns, ndim).
+        angles (array or None): Shape (na, ...).
+        dcf (array or None): Shape (na, ns).
+
+    Returns:
+        times_rc (list): List of lists. List 'shape' is (nresp, nt).
+            Each item in the list is an array with shape (na_rc,).
+        kspace_rc (list): List of lists. List 'shape' is (nresp, nt).
+            Each item in the list is an array with shape (ncoils, na_rc, ns).
+        traj_rc (list): List of lists. List 'shape' is (nresp, nt).
+            Each item in the list is an array with shape (na_rc, ns, ndim).
+        angles_rc (list or None): List of lists. List 'shape' is (nresp, nt).
+            Each item in the list is an array with shape (na_rc, ...).
+        dcf_rc (list or None): List of lists. List 'shape' is (nresp, nt).
+            Each item in the list is an array with shape (na_rc, ns).
+    """
+    # First sort data into respiratory phases
+    times_rc, kspace_rc, traj_rc, angles_rc, dcf_rc = \
+        respiratory(resp_sig, resp_edges, times, kspace, traj, angles, dcf)
+
+    # Further sort data from each respiratory phase into cardiac phases
+    nresp = len(times_rc)
+    for r in range(nresp):
+        angles_r = angles_rc[r] if angles is not None else None
+        dcf_r = dcf_rc[r] if dcf is not None else None
+        times_t, kspace_t, traj_t, angles_t, dcf_t = \
+            cardiac(triggers, nt, times_rc[r], kspace_rc[r], traj_rc[r],
+                    angles_r, dcf_r)
+
+        # Replace the array with a list of arrays
+        times_rc[r] = times_t
+        kspace_rc[r] = kspace_t
+        traj_rc[r] = traj_t
+        if angles is not None:
+            angles_rc[r] = angles_t
+        if dcf is not None:
+            dcf_rc[r] = dcf_t
+
+    return times_rc, kspace_rc, traj_rc, angles_rc, dcf_rc
+
+
+def vel_resp_card(resp_sig, resp_edges, triggers, nt, times, kspace, traj,
+                  angles=None, dcf=None):
+    """Sorts velocity encoded data into cardiac and respiratory phases.
+
+    Args:
+        resp_sig (array): 1D array containing the respiratory signal. The
+            respiratory signal should have length `na * nv`.
+        resp_edges (array): 1D array with shape (nresp + 1,).
+            Respiratory bin edges.
+        triggers (array): 1D array containing cardiac trigger times (ms).
+        nt (int): Number of cardiac phases to sort into.
+        times (array): 1D array containing the time stamps for each line of
+            k-space. Shape (na * nv,).
+        kspace (array): Shape (ncoils, nv, na, ns).
+        traj (array): Shape (nv, na, ns, ndim).
+        angles (array or None): Shape (nv, na, ...).
+        dcf (array or None): Shape (nv, na, ns).
+
+    Returns:
+        times_vrc (list): List of lists of lists.
+            List 'shape' is (nv, nresp, nt).
+            Each item in the list is an array with shape (na_rc,).
+        kspace_vrc (list): List of lists of lists.
+            List 'shape' is (nv, nresp, nt).
+            Each item in the list is an array with shape (ncoils, na_rc, ns).
+        traj_vrc (list): List of lists of lists.
+            List 'shape' is (nv, nresp, nt).
+            Each item in the list is an array with shape (na_rc, ns, ndim).
+        angles_vrc (list): List of lists of lists.
+            List 'shape' is (nv, nresp, nt).
+            Each item in the list is an array with shape (na_rc, ...).
+        dcf_vrc (list): List of lists of lists.
+            List 'shape' is (nv, nresp, nt).
+            Each item in the list is an array with shape (na_rc, ns).
+    """
+    nv = kspace.shape[1]
+    resp_sig = np.reshape(resp_sig, (-1, nv))
+    times = np.reshape(times, (-1, nv))
+
+    times_vrc = []
+    kspace_vrc = []
+    traj_vrc = []
+    angles_vrc = [] if angles is not None else None
+    dcf_vrc = [] if dcf is not None else None
+
+    for v in range(nv):
+        angles_v = angles[v] if angles is not None else None
+        dcf_v = dcf[v] if dcf is not None else None
+        times_rc, kspace_rc, traj_rc, angles_rc, dcf_rc = \
+            resp_card(resp_sig[:, v], resp_edges, triggers, nt, times[:, v],
+                      kspace[:, v], traj[v], angles=angles_v, dcf=dcf_v)
+
+        times_vrc.append(times_rc)
+        kspace_vrc.append(kspace_rc)
+        traj_vrc.append(traj_rc)
+        if angles is not None:
+            angles_vrc.append(angles_rc)
+        if dcf is not None:
+            dcf_vrc.append(dcf_rc)
+
+    return times_vrc, kspace_vrc, traj_vrc, angles_vrc, dcf_vrc
 
 
 def sim_heartbeats(acq_time, rr_base=400, std=7, delta=0.1):
