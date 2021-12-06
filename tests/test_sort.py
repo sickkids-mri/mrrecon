@@ -52,7 +52,7 @@ def test_cardiac(num_triggers=100, tr=4.1, nt=16):
         angles[inds_t, :] = t
         dcf[inds_t, :] = t
 
-    kspace_t, traj_t, angles_t, dcf_t = \
+    times_t, kspace_t, traj_t, angles_t, dcf_t = \
         mr.sort.cardiac(triggers, nt, times, kspace, traj, angles, dcf)
 
     for t in range(nt):

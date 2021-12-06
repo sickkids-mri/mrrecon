@@ -8,13 +8,15 @@ def cardiac(triggers, nt, times, kspace, traj, angles=None, dcf=None):
         triggers (array): 1D array containing cardiac trigger times (ms).
         nt (int): Number of cardiac phases to sort into.
         times (array): 1D array containing the time stamps for each line of
-            k-space.
+            k-space. Shape (na,).
         kspace (array): Shape (ncoils, na, ns).
         traj (array): Shape (na, ns, ndim).
         angles (array): Shape (na, ...).
         dcf (array): Shape (na, ns).
 
     Returns:
+        times_t (list): Length `nt`.
+            Each item in the list is an array with shape (na_t,).
         kspace_t (list): Length `nt`.
             Each item in the list is an array with shape (ncoils, na_t, ns).
         traj_t (list): Length `nt`.
@@ -36,6 +38,7 @@ def cardiac(triggers, nt, times, kspace, traj, angles=None, dcf=None):
     inds -= 1  # Start indices from 0 instead of 1
     inds %= nt
 
+    times_t = []
     kspace_t = []
     traj_t = []
     angles_t = [] if angles is not None else None
@@ -43,6 +46,7 @@ def cardiac(triggers, nt, times, kspace, traj, angles=None, dcf=None):
 
     for t in range(nt):
         inds_t = (inds == t)
+        times_t.append(times[inds_t])
         kspace_t.append(kspace[:, inds_t, :])
         traj_t.append(traj[inds_t])
         if angles is not None:
@@ -51,23 +55,25 @@ def cardiac(triggers, nt, times, kspace, traj, angles=None, dcf=None):
         if dcf is not None:
             dcf_t.append(dcf[inds_t])
 
-    return kspace_t, traj_t, angles_t, dcf_t
+    return times_t, kspace_t, traj_t, angles_t, dcf_t
 
 
-def cardiac_vel(triggers, nt, times, kspace, traj, angles=None, dcf=None):
+def vel_card(triggers, nt, times, kspace, traj, angles=None, dcf=None):
     """Sorts velocity encoded data into cardiac phases.
 
     Args:
         triggers (array): 1D array containing cardiac trigger times (ms).
         nt (int): Number of cardiac phases to sort into.
         times (array): 1D array containing the time stamps for each line of
-            k-space.
+            k-space. Shape (na * nv,).
         kspace (array): Shape (ncoils, nv, na, ns).
         traj (array): Shape (nv, na, ns, ndim).
         angles (array): Shape (nv, na, ...).
         dcf (array): Shape (nv, na, ns).
 
     Returns:
+        times_vt (list): List of lists. List 'shape' is (nv, nt).
+            Each item is an array with shape (na_t,).
         kspace_vt (list): List of lists. List 'shape' is (nv, nt).
             Each item is an array with shape (ncoils, na_t, ns).
         traj_vt (list): List of lists. List 'shape' is (nv, nt).
@@ -80,6 +86,7 @@ def cardiac_vel(triggers, nt, times, kspace, traj, angles=None, dcf=None):
     nv = kspace.shape[1]
     times = np.reshape(times, (-1, nv))
 
+    times_vt = []
     kspace_vt = []
     traj_vt = []
     angles_vt = [] if angles is not None else None
@@ -88,9 +95,10 @@ def cardiac_vel(triggers, nt, times, kspace, traj, angles=None, dcf=None):
     for v in range(nv):
         angles_v = angles[v] if angles is not None else None
         dcf_v = dcf[v] if dcf is not None else None
-        kspace_t, traj_t, angles_t, dcf_t = \
+        times_t, kspace_t, traj_t, angles_t, dcf_t = \
             cardiac(triggers, nt, times[:, v], kspace[:, v], traj[v], angles_v,
                     dcf_v)
+        times_vt.append(times_t)
         kspace_vt.append(kspace_t)
         traj_vt.append(traj_t)
         if angles is not None:
@@ -99,7 +107,7 @@ def cardiac_vel(triggers, nt, times, kspace, traj, angles=None, dcf=None):
         if dcf is not None:
             dcf_vt.append(dcf_t)
 
-    return kspace_vt, traj_vt, angles_vt, dcf_vt
+    return times_vt, kspace_vt, traj_vt, angles_vt, dcf_vt
 
 
 def sim_heartbeats(acq_time, rr_base=400, std=7, delta=0.1):
