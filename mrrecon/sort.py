@@ -128,6 +128,10 @@ def calc_resp_edges(resp_sig, nresp):
             flipped. Use this respiratory signal (rather than the input
             respiratory signal) with the returned bin edges.
     """
+    if nresp == 1:
+        resp_edges = np.array([resp_sig.min(), resp_sig.max()])
+        return resp_edges, resp_sig
+
     mean = resp_sig.mean()
 
     # Calculate initial fine histogram
