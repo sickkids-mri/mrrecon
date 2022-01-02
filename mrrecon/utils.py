@@ -55,3 +55,33 @@ def sinc_upsample(s, upsample_factor):
         shift = int(xp.floor(upsample_factor / 2))
         s = xp.roll(s, -shift)
     return s
+
+
+def upsample_times(times, upsample_factor):
+    """Calculates time stamps for an upsampled cyclic signal.
+
+    Signal is assumed cyclic, e.g. flow curve.
+
+    NOTE: If the time stamps did not start from 0, the upsampled time stamps
+    may no longer be in ascending order required for plotting.
+
+    Args:
+        times (array): 1D array containing the time stamps of the original
+            signal. Time stamps should be evenly spaced.
+        upsample_factor (int): Positive integer.
+    """
+    xp = sp.get_array_module(times)
+
+    if upsample_factor == 1:
+        return xp.copy(times)
+
+    dt = times[1] - times[0]
+    dt = dt / upsample_factor
+    nx = times.shape[0]
+    nx_new = nx * upsample_factor
+    # This gets confusing when time stamps have already been shifted and no
+    # longer start from 0. But the following should be correct...
+    shift = times[0]  # How far first time stamp shifted from 0
+    rr = times[-1] - shift + (times[1] - times[0])
+    times = (np.arange(nx_new) * dt + shift) % rr
+    return times
