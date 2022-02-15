@@ -201,7 +201,7 @@ def respiratory(resp_sig, resp_edges, times, kspace, traj,
     # Data falling outside the bin range will have indices of -1 and `nresp`.
     # Sort those data into corresponding nearest bin
     inds[inds == -1] = 0
-    inds[inds == nresp] == nresp - 1
+    inds[inds == nresp] = nresp - 1
 
     times_r = []
     kspace_r = []
