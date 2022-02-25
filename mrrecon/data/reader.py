@@ -20,8 +20,10 @@ def read_twix(filename, keep_syncdata_and_acqend=True):
             # Then it is the raidfile_hdr (not needed)
             continue
 
-        scan['hdr']['Config'] = _make_dict_from_hdr(scan['hdr']['Config'])
-        scan['hdr']['Dicom'] = _make_dict_from_hdr(scan['hdr']['Dicom'])
+        if not isinstance(scan['hdr']['Config'], dict):
+            scan['hdr']['Config'] = _make_dict_from_hdr(scan['hdr']['Config'])
+        if not isinstance(scan['hdr']['Dicom'], dict):
+            scan['hdr']['Dicom'] = _make_dict_from_hdr(scan['hdr']['Dicom'])
 
     return scan_list
 
@@ -146,15 +148,18 @@ class DataLoader:
         self.data['nx'] = config['ImageColumns']
         self.data['ny'] = config['ImageLines']
 
-        meas = hdr['Meas'].split('\n')  # Not yet making dict out of 'Meas'
-        for n, line in enumerate(meas):
-            if 'i3DFTLength' in line:
-                if int(meas[n + 2]) == 1:
-                    self.data['nz'] = 1
-                else:
-                    self.data['nz'] = int(hdr['MeasYaps']['sKSpace']['lImagesPerSlab'])  # noqa
-                break
-
+        if not isinstance(hdr['Meas'],dict):
+            meas = hdr['Meas'].split('\n')  # Not yet making dict out of 'Meas'
+            for n, line in enumerate(meas):
+                if 'i3DFTLength' in line:
+                    if int(meas[n + 2]) == 1:
+                        self.data['nz'] = 1
+                    else:
+                        self.data['nz'] = int(hdr['MeasYaps']['sKSpace']['lImagesPerSlab'])  # noqa
+                    break
+        else:
+            self.data['nz'] = hdr['Meas']['i3DFTLength']
+    
         # In millimetres
         self.data['fovx'] = float(hdr['MeasYaps']['sSliceArray']['asSlice'][0]['dReadoutFOV'])  # noqa
         self.data['fovy'] = float(hdr['MeasYaps']['sSliceArray']['asSlice'][0]['dPhaseFOV'])  # noqa
@@ -173,14 +178,20 @@ class DataLoader:
         self.data['flipangle'] = float(hdr['MeasYaps']['adFlipAngleDegree'][0])  # noqa
 
         # VENC in (cm/s)
-        self.data['venc'] = float(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nVelocity'])  # noqa
-        self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
-
+        try:
+            self.data['venc'] = float(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nVelocity'])  # noqa
+            self.data['veldir'] = int(hdr['MeasYaps']['sAngio']['sFlowArray']['asElm'][0]['nDir'])  # noqa
+        except KeyError:
+            pass
+            
         self.data['weight'] = dicom['flUsedPatientWeight']  # kg
 
-        regex = r'flPatientHeight.*?(\d+.\d+).*?}'
-        match = re.search(regex, hdr['Meas'], re.DOTALL)
-        self.data['height'] = float(match.group(1))  # mm
+        if not isinstance(hdr['Meas'], dict):
+            regex = r'flPatientHeight.*?(\d+.\d+).*?}'
+            match = re.search(regex, hdr['Meas'], re.DOTALL)
+            self.data['height'] = float(match.group(1))  # mm
+        else:
+            self.data['height'] =hdr['Meas']['flPatientHeight']
 
         # Convert from nanoseconds to microseconds
         self.data['dwelltime'] = float(hdr['MeasYaps']['sRXSPEC']['alDwellTime'][0]) / 1000  # noqa
@@ -235,9 +246,16 @@ class DataLoader:
         # For dicom writing
         self.data['vendor'] = dicom['Manufacturer']
         self.data['systemmodel'] = dicom['ManufacturersModelName']
-        tmpstr = config['ExamMemoryUID']
-        self.data['acquisition_date'] = tmpstr.split('_')[3]
-        self.data['acquisition_time'] = tmpstr.split('_')[4]
+        
+        try:
+            tmpstr = config['ExamMemoryUID']
+            self.data['acquisition_date'] = tmpstr.split('_')[3]
+            self.data['acquisition_time'] = tmpstr.split('_')[4]
+        except: 
+            tmpstr = hdr['Meas']['tReferenceImage0']
+            tmpstr = tmpstr.split('.')[-1]
+            self.data['acquisition_date'] = tmpstr[0:8] #YYYYMMDD
+            self.data['acquisition_time'] = tmpstr[8:]
         self.data['StudyLOID'] = config['StudyLOID']
         self.data['SeriesLOID'] = config['SeriesLOID']
         self.data['PatientLOID'] = config['PatientLOID']
@@ -333,10 +351,10 @@ class Flow4DLoader(DataLoader):
                                '2 or 3.')
 
         # Check datatypes
-        assert isinstance(scan_list[0], np.void)  # raidfile_hdr
-        assert isinstance(scan_list[1], dict)  # noise or k-space
-        if len(scan_list) == 3:
-            assert isinstance(scan_list[2], dict)  # k-space
+        #assert isinstance(scan_list[0], np.void)  # raidfile_hdr
+        #assert isinstance(scan_list[1], dict)  # noise or k-space
+        #if len(scan_list) == 3:
+        #    assert isinstance(scan_list[2], dict)  # k-space
 
         image_scans = []  # For collecting image scans for header reading
 
@@ -400,9 +418,11 @@ class Flow4DLoader(DataLoader):
 
                 self.data['noise'] = np.empty((ncoils, nlines, nro),
                                               dtype=np.complex64)
-
-                for idx, line in enumerate(scan['mdb']):
-                    self.data['noise'][:, idx, :] = line.data
+                try:
+                    for idx, line in enumerate(scan['mdb']):
+                        self.data['noise'][:, idx, :] = line.data
+                except ValueError:
+                    print('Error reading noise scan. Noise data not saved')
 
         return image_scans
 

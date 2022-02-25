@@ -10,7 +10,7 @@ import numpy as np
 
 import pydicom
 
-import ndflow as nf
+#import ndflow as nf
 
 
 def normalize_pc(img, new_max=4096):
