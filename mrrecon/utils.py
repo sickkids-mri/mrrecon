@@ -85,3 +85,17 @@ def upsample_times(times, upsample_factor):
     rr = times[-1] - shift + (times[1] - times[0])
     times = (np.arange(nx_new) * dt + shift) % rr
     return times
+
+
+def rot_from_quat(quat):
+    """Generate rotation matrix from quaternion.
+
+    TODO Has this been verified?
+    Why is it different from scipy's implementation?
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html
+    """
+    a, b, c, d = quat
+    rot = np.array([[a * a + b * b - c * c - d * d, 2 * b * c - 2 * a * d, 2 * b * d + 2 * a * c],
+                    [2 * b * c + 2 * a * d, a * a - b * b + c * c - d * d, 2 * c * d - 2 * a * b],
+                    [2 * b * d - 2 * a * c, 2 * c * d + 2 * a * b, a * a - b * b - c * c + d * d]])
+    return rot
