@@ -209,10 +209,10 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
         ds.CardiacNumberOfImages = nt
         ds.Rows = ny
         ds.Columns = nx
-        ds.PixelSpacing = [dy, dx]
+        ds.PixelSpacing = [np.round(dy, 3), np.round(dx, 3)]
         ds.PercentSampling = 100
         ds.PercentPhaseFieldOfView = fovy / fovx * 100
-        ds.SliceThickness = dz
+        ds.SliceThickness = np.round(dz, 1)
         ds.NumberOfPhaseEncodingSteps = ny
         ds.AcquisitionMatrix = [0, ny, nx, nz]
         ds[(0x0051, 0x100b)].value = str(ny) + '*' + str(nx) + 's'
@@ -277,7 +277,6 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
         Sag_inc, Tra_inc, Cor_inc = 0, 0, 0
 
         R = nf.traj.rot_from_quat(data['rot_quat'])
-
         if orientation == 'Tra':
             Tra_inc = data['slice_normal']['dTra']
             ds.ImageOrientationPatient[:] = [1, 0, 0, 0, 1, 0]
@@ -304,7 +303,7 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
 
             for islice in range(nz):
                 imPos_slice = imPos_edge + dz * islice * np.array([Sag_inc, Cor_inc, Tra_inc])
-                ds.SliceLocation = imPos_slice[-1]
+                ds.SliceLocation = np.round(imPos_slice[-1], 3)
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
                 ds[(0x0019, 0x1015)].value[:] = imPos_slice.tolist()
 
