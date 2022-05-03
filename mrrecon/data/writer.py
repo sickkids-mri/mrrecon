@@ -306,7 +306,7 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
                 ds.SliceLocation = np.round(imPos_slice[-1], 3)
                 ds.ImagePositionPatient = np.ravel(imPos_slice).tolist()
                 ds[(0x0019, 0x1015)].value[:] = imPos_slice.tolist()
-                ds.InstanceNumber = islice+1
+                ds.InstanceNumber = islice + 1
 
                 if v == 0:
                     savename = subdir_mag / f'frame{iframe}_slice{islice}.IMA'
