@@ -205,7 +205,6 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
             ds.WindowCenter = 0
             ds.WindowWidth = 4096
 
-        startTime = 0
         ds.NominalInterval = int(round(data['rr_avg']))
         ds.CardiacNumberOfImages = nt
         ds.Rows = ny
@@ -298,8 +297,10 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
 
         for iframe in range(nt):
             ds.TriggerTime = frame_array[iframe]
-            ds.InstanceCreationTime = str(startTime + frame_array[iframe]/1000)
-            ds.ContentTime = str(startTime + frame_array[iframe]/1000)
+            dt = datetime.datetime.now()
+            timeStr = dt.strftime('%H%M%S.%f')
+            ds.InstanceCreationTime = timeStr
+            ds.ContentTime = timeStr
 
             for islice in range(nz):
                 imPos_slice = imPos_edge + dz * islice * np.array([Sag_inc, Cor_inc, Tra_inc])
@@ -336,7 +337,7 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
 
                 tmpslice = img[v, iframe, islice, :, :]
                 ds.PixelData = tmpslice.tobytes()
-                ds.SOPInstanceUID = str(SOPInstanceUID)
+                ds.SOPInstanceUID = pydicom.uid.generate_uid()
                 SOPInstanceUID += 1
                 ds.save_as(savename)
 
