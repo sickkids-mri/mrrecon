@@ -147,9 +147,14 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
     fovz = dz * nz
 
     # Invert velocity directions
-    # TODO Confirm this. Are these dependent on anything?
-    img[1] = invert_velocity(img[1])  # Invert z velocities
-    img[2] = invert_velocity(img[2])  # Invert x velocities
+    if data['patient_orientation'] == 'HFS':
+        img[1] = invert_velocity(img[1])  # Invert z velocities
+        img[2] = invert_velocity(img[2])  # Invert x velocities
+    elif data['patient_orientation'] == 'FFS':
+        pass
+    else:
+        s = f'Patient orientation not recognized or missing case.'
+        raise RuntimeError(s)
 
     thisdir = Path(__file__).parent
 
