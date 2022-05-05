@@ -10,7 +10,7 @@ import numpy as np
 
 import pydicom
 
-import ndflow as nf
+import mrrecon as mr
 
 
 def normalize_pc(img, new_max=4096):
@@ -276,7 +276,8 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
         ds[(0x0051, 0x100e)].value = orientation
         Sag_inc, Tra_inc, Cor_inc = 0, 0, 0
 
-        R = nf.traj.rot_from_quat(data['rot_quat'])
+        R = mr.utils.rot_from_quat(data['rot_quat'])
+
         if orientation == 'Tra':
             Tra_inc = data['slice_normal']['dTra']
             ds.ImageOrientationPatient[:] = [1, 0, 0, 0, 1, 0]
