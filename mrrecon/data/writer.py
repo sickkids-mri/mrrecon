@@ -105,7 +105,7 @@ def invert_velocity(v, dcm_img_max=4096):
     return v
 
 
-def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
+def write_4d_flow_dicoms(img, data, outdir, medis_flag=False, save_as_unique_study=True,
                          use_this_study_id=None):
     """Writes 4D flow dicoms.
 
@@ -155,6 +155,10 @@ def write_4d_flow_dicoms(img, data, outdir, save_as_unique_study=True,
     else:
         s = f'Patient orientation not recognized or missing case.'
         raise RuntimeError(s)
+
+    if medis_flag:
+        img[2] = invert_velocity(img[2])  # Invert x velocities
+        img[3] = invert_velocity(img[3])  # Invert y velocities
 
     thisdir = Path(__file__).parent
 
