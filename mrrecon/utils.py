@@ -62,6 +62,9 @@ def upsample_times(times, upsample_factor):
 
     Signal is assumed cyclic, e.g. flow curve.
 
+    When `times` has length 1 (e.g. when analyzing time-averaged images),
+    `times` is expected to be half the RR interval.
+
     NOTE: If the time stamps did not start from 0, the upsampled time stamps
     may no longer be in ascending order required for plotting.
 
@@ -75,14 +78,18 @@ def upsample_times(times, upsample_factor):
     if upsample_factor == 1:
         return xp.copy(times)
 
-    dt = times[1] - times[0]
-    dt = dt / upsample_factor
+    if len(times) == 1:
+        dt_orig = times[0] * 2
+    else:
+        dt_orig = times[1] - times[0]
+
+    dt = dt_orig / upsample_factor
     nx = times.shape[0]
     nx_new = nx * upsample_factor
     # This gets confusing when time stamps have already been shifted and no
     # longer start from 0. But the following should be correct...
     shift = times[0]  # How far first time stamp shifted from 0
-    rr = times[-1] - shift + (times[1] - times[0])
+    rr = times[-1] - shift + dt_orig
     times = (np.arange(nx_new) * dt + shift) % rr
     return times
 
